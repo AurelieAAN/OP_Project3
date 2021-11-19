@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # coding: utf-8
+# %%
 
 # # Présentation générale du jeu de données
 
@@ -9,7 +10,7 @@
 
 # Chargement des librairies suivantes qu'on utilisera pour l'analyse de données :
 
-# In[89]:
+# %%
 
 
 import pandas as pd
@@ -22,7 +23,99 @@ import folium
 import json
 
 
-# In[95]:
+# %%
+
+def data_transformcol_string(data):
+    """
+    Mettre toutes les données en majuscule
+    
+    
+    
+    Args:
+        data ([type]): données
+    
+    
+    Returns:
+        [type]: données
+    
+    """
+    for col in data.select_dtypes(include=['object']).columns:
+        if type(data[col].loc[pd.isna(data[col])==False].iloc[0])== str:
+            try:
+                data[col]=data[col].astype('|S')
+            except:
+                print("error - caractères spéciaux : "+col)
+                continue
+                
+def data_fillNA_string(data):
+    """
+    Mettre toutes les données en majuscule
+    
+    
+    
+    Args:
+        data ([type]): données
+    
+    
+    Returns:
+        [type]: données
+    
+    """
+    for col in data.select_dtypes(include=['object']).columns:
+        if type(data[col].loc[pd.isna(data[col])==False].iloc[0])== str:
+            try:
+                data[col].fillna("N.A", inplace=True)
+            except:
+                print("error - update na : "+col)
+                continue
+                
+def data_uniqueone_string(data):
+    """
+    Mettre toutes les données en majuscule
+    
+    
+    
+    Args:
+        data ([type]): données
+    
+    
+    Returns:
+        [type]: données
+    
+    """
+    result=data
+    for col in data.columns:
+        if data[col].nunique()<= 1:
+            print("deleted unique colonne : "+col)
+            result=data.drop(col, axis=1,inplace=True)
+        else:
+            print(col+" - count unique : "+str(data[col].nunique()))
+    return result
+
+# %%
+
+def data_missingTab(data):
+    """
+    Mettre toutes les données en majuscule
+    
+    
+    
+    Args:
+        data ([type]): données
+    
+    
+    Returns:
+        [type]: données
+    
+    """
+    percent_missing = data.isnull().sum() * 100 / len(data)
+    missing_value_df = pd.DataFrame({'column_name': data.columns,
+                                 'percent_missing': round(percent_missing,2)})
+    
+    return missing_value_df
+
+
+# %%
 
 def data_majuscule(data):
     """
@@ -42,7 +135,7 @@ def data_majuscule(data):
     return result
 
 
-# In[101]:
+# %%
 
 
 def del_Nan(data, seuil, delete, all_freq):
@@ -64,15 +157,15 @@ def del_Nan(data, seuil, delete, all_freq):
     tab = pd.isnull(data).sum()/len(data)
     s=tab.to_frame(name='freq').reset_index()
     if all_freq==0:
-        print(s[s['freq']>=seuil])
-    else:
-        print(s)
+        return s[s['freq']>=seuil]
+    if all_freq==1:
+        return s
     if delete==1:
         s=s[s['freq']>=seuil]
         col_del=list(s['index'])
         data=data.drop(list(s['index']), axis=1, inplace=True)
         print("Columns deleted : ", col_del)
-# In[102]
+# %%
 #créons une fonction
 def matrix_vm(data_i, fig_i, color_i):
     """
@@ -95,7 +188,7 @@ def matrix_vm(data_i, fig_i, color_i):
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left', handles=[gray_patch, white_patch])
 
 
-# In[117]
+# %%
 
 def graph_stripplot(data_i,column_i, title_i, scale_i, color_i):
     """
@@ -121,7 +214,7 @@ def graph_stripplot(data_i,column_i, title_i, scale_i, color_i):
 
 
 
-# In[116]:
+# %%
 
 
 
@@ -152,7 +245,7 @@ def graph_boxenplot(data_i, column_i, color_i,title_i,scale_i):
 
 
 
-# In[121]:
+# %%
 
 
 def outliers(data, var, delete_i):
@@ -199,7 +292,7 @@ def outliers(data, var, delete_i):
     else:
         return(d)
 
-# In[122]:
+# %%
 
 def delete_outliers_UPPER(data_i, s, value_i):
     """
@@ -274,7 +367,7 @@ def graph_hist(var, bins_r, title_i,color_h, xmin,xmax, xscale, ymin, ymax, xlab
     plt.ylabel(ylabel)
 
 
-# In[129]:
+# %%
 def graph_hist_sans_intervalles(var, title_i,color_h, xmin,xmax, xscale, ymin, ymax, xlabel, ylabel, scale_i):
     """
     Création d'un histogramme
@@ -311,7 +404,7 @@ def graph_hist_sans_intervalles(var, title_i,color_h, xmin,xmax, xscale, ymin, y
     plt.ylabel(ylabel)
 
 
-# In[129]:
+# %%
 
 
 def graph_barplot(data, title, color_i,ylim_min, ylim_max, xlabel_i, ylabel_i, rotate_i, graph_vertical, fig_i):
@@ -353,7 +446,7 @@ def graph_barplot(data, title, color_i,ylim_min, ylim_max, xlabel_i, ylabel_i, r
         
 
 
-# In[135]:
+# %%
 
 
 
@@ -381,12 +474,12 @@ def graph_violinplot(data_col_i, title_i, ylabel_i, color_i,fig_i):
     ax.set_ylabel(ylabel_i)
 
 
-# In[137]:
+# %%
 
 
 
 
-# In[144]:
+# %%
 
 def graph_boxplot(data_i, column_i, title_i, color_i, fig_i):
     """
@@ -410,7 +503,7 @@ def graph_boxplot(data_i, column_i, title_i, color_i, fig_i):
     sns.boxplot(y=column_i, color=color_i, data=data_i)
     plt.title(title_i)
 
-# In[144]:
+# %%
 
 def graph_boxplot_by_group(data_i, column_i, groupby_i, title_i, color_i, fig_i):
     """
@@ -435,7 +528,7 @@ def graph_boxplot_by_group(data_i, column_i, groupby_i, title_i, color_i, fig_i)
     sns.boxplot(y=column_i,x=groupby_i, palette=color_i, data=data_i)
     plt.title(title_i)
 
-# In[165]:
+# %%
 
 def graph_bubbleplot(data_i, color_i,xlabel_i, ylabel_i, title_i, ylim_min, ylim_max,
                     color_text, align, fontweight_i, scale_i):
@@ -476,7 +569,7 @@ def graph_bubbleplot(data_i, color_i,xlabel_i, ylabel_i, title_i, ylim_min, ylim
         plt.text(i,txt, str(round(txt,2))+" %", color=color_text, ha=align, fontweight=fontweight_i, size=12)
 
 
-# In[168]:
+# %%
 
 
 def graph_circle(data, column, title):
@@ -507,7 +600,7 @@ def graph_circle(data, column, title):
 
 # Réalisons un diagramme circulaire représentant nos données de la variable libelle_francais.
 
-# In[188]:
+# %%
 
 
 def graph_pie(data, column, title, colors_i, fig_i):
@@ -535,7 +628,7 @@ def graph_pie(data, column, title, colors_i, fig_i):
     
 
 
-# In[211]:
+# %%
 
 
 
@@ -546,7 +639,7 @@ def graph_pie(data, column, title, colors_i, fig_i):
 # Pour cela, nous pouvons récupérer les données geographiques des arrondissements qui se trouve sur le site de Paris.
 # source : https://opendata.paris.fr/explore/dataset/arrondissements/export/?disjunctive.c_ar&disjunctive.c_arinsee&disjunctive.l_ar&location=13,48.85156,2.32327
 
-# In[216]:
+# %%
 
 def carte_paris_arr(data_i, columns_i,  title_i, fill_color_i):
     """
@@ -582,9 +675,9 @@ def carte_paris_arr(data_i, columns_i,  title_i, fill_color_i):
 
 # Il serait intéressant de savoir aussi où se trouve les arbres les plus "gros".
 
-# In[234]:
+# %%
 
-# In[249]:
+# %%
 
 
 def plot_quanti(data_i, column_x, column_y, scale_i, color_i, title_i, ylabel_i, xlabel_i): 
@@ -618,7 +711,7 @@ def plot_quanti(data_i, column_x, column_y, scale_i, color_i, title_i, ylabel_i,
     plt.xlabel(xlabel_i)
 
 
-# In[250]:
+# %%
 
 
 
