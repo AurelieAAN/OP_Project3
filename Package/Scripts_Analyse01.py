@@ -47,7 +47,7 @@ def data_transformcol_string(data):
                 print("error - caractères spéciaux : "+col)
                 continue
                 
-def data_fillNA_string(data):
+def data_fillNA_string(data, value):
     """
     Mettre toutes les données en majuscule
     
@@ -64,7 +64,7 @@ def data_fillNA_string(data):
     for col in data.select_dtypes(include=['object']).columns:
         if type(data[col].loc[pd.isna(data[col])==False].iloc[0])== str:
             try:
-                data[col].fillna("N.A", inplace=True)
+                data[col].fillna(value, inplace=True)
             except:
                 print("error - update na : "+col)
                 continue
@@ -531,7 +531,7 @@ def graph_boxplot_by_group(data_i, column_i, groupby_i, title_i, color_i, fig_i)
 # %%
 
 def graph_bubbleplot(data_i, color_i,xlabel_i, ylabel_i, title_i, ylim_min, ylim_max,
-                    color_text, align, fontweight_i, scale_i):
+                    color_text, align, fontweight_i, scale_i, rotate_i):
     """
     Grphique bubbleplot
     
@@ -553,7 +553,7 @@ def graph_bubbleplot(data_i, color_i,xlabel_i, ylabel_i, title_i, ylim_min, ylim
     Exemple:
     graph_bubbleplot(data['domanialite'], 'g',"Domanialite", "Fréquence en %", 
                  "Répartition des arbres par catégorie des domanialites", 0, 90,
-                    "black", "center", "bold", (8,5))
+                    "black", "center", "bold", (8,5), 70)
     
     """
     t = data_i
@@ -565,6 +565,7 @@ def graph_bubbleplot(data_i, color_i,xlabel_i, ylabel_i, title_i, ylim_min, ylim
     plt.ylabel(ylabel_i)
     plt.title(title_i)
     plt.ylim(ylim_min,ylim_max)
+    plt.xticks(rotation=rotate_i)
     for i,txt in enumerate(data_var['values']):
         plt.text(i,txt, str(round(txt,2))+" %", color=color_text, ha=align, fontweight=fontweight_i, size=12)
 
