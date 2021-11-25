@@ -47,7 +47,7 @@ def data_transformcol_string(data):
                 print("error - caractères spéciaux : "+col)
                 continue
                 
-def data_fillNA_string(data, value):
+def data_fillNA_string(data, value, excluded):
     """
     Mettre toutes les données en majuscule
     
@@ -62,7 +62,7 @@ def data_fillNA_string(data, value):
     
     """
     for col in data.select_dtypes(include=['object']).columns:
-        if type(data[col].loc[pd.isna(data[col])==False].iloc[0])== str:
+        if type(data[col].loc[pd.isna(data[col])==False].iloc[0])== str and col not in excluded:
             try:
                 data[col].fillna(value, inplace=True)
             except:
