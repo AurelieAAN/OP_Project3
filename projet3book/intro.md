@@ -1,16 +1,8 @@
-# Welcome to your Jupyter Book
+# Objectif : Améliorer la santé des français book
 
-This is a small sample book to give you a feel for how book content is
-structured.
 
-:::{note}
-Here is a note!
-:::
+Etude sur les produits alimentaires du monde
 
-And here is a code block:
+Données provenant du site OpenFood : https://world.openfoodfacts.org/
 
-```
-e = mc^2
-```
 
-Check out the content pages bundled with this sample book to see more.

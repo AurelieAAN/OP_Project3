@@ -4,6 +4,9 @@
 format: jb-book
 root: intro
 chapters:
-- file: ScriptFood_Analyse
-  sections:
-  - file: chapter1section
+- file: ScriptFood_Analyse_p1
+- file: ScriptFood_Analyse_p2
+- file: ScriptFood_Analyse_p3
+- file: ScriptFood_Analyse_p4
+- file: ScriptFood_Analyse_p5
+- file: ScriptFood_Analyse_p6

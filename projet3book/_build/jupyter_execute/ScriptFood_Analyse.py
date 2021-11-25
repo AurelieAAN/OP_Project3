@@ -1,24 +1,31 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # Contexte du projet
+# # Améliorons la santé des français
+
+# -------------------------------------------------------------------------------------------------------------------------------
+
+# # I - Contexte du projet
 
 # ## Problématique : Comment améliorer la santé des français ?
+# 
 
-# ## But de l’étude :
 # - Est-ce que le nutriscore y contribue ?
 # - Si non, comment pouvons -  nous améliorer la santé de la population ?
 
 # ## Methode :
-# - Découvrir les caractéristiques du nutriscore et son intérêt
+# - Analyser les caractéristiques du nutriscore
 # - Etudier les autres moyens à notre disposition pour améliorer l’efficacité du nutriscore ou apporter de nouvelles solutions
 
-# # Construction de la base de données
+# # II - Présentation de la base de données
 
-# ## Exploration  de nos données
+# Import des packages que nous allons utiliser tout au long de ce projet
 
 # In[1]:
 
+
+#notre package de fonctionnalités
+from Package import Scripts_Analyse01 as pk
 
 import pandas as pd
 import numpy as np
@@ -26,21 +33,31 @@ import missingno
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import scipy.stats
+from scipy.stats import pearsonr
 import seaborn as sns
-from Package import Scripts_Analyse01 as pk
 import plotly.express as px
 import plotly.graph_objects as go
 from yellowbrick.features import ParallelCoordinates
 from plotly.graph_objects import Layout
+import jenkspy
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, scale
+from sklearn import preprocessing
+from scipy.cluster.hierarchy import fcluster
 
 
-# In[ ]:
+# ## 1) Quels sont nos individus ? Quelles sont nos variables ?
+
+# Import des données provenant du site OpenFood :
+# https://world.openfoodfacts.org/
+
+# In[17]:
 
 
 data = pd.read_csv("./Data/fr.openfoodfacts.org.products.csv", encoding='utf-8', sep="\t",low_memory=False)
 
 
-# In[ ]:
+# In[18]:
 
 
 data.shape
@@ -50,7 +67,7 @@ data.shape
 
 # Regardons le nom des colonnes.
 
-# In[ ]:
+# In[19]:
 
 
 for i in data.columns:
@@ -59,39 +76,28 @@ for i in data.columns:
 
 # Nous disposons du détail des aliments en fonction notamment des apports nutritionnels.
 # 
-# Regardons quel type de variables nous avons.
-
-# In[ ]:
-
-
-data.info()
-
-
-# Essayons de transformer les variables object en string.
-
-# In[ ]:
-
-
-#pk.data_transformcol_string(data)
-
 
 # Etudions un extrait de nos donnéees.
 
-# In[ ]:
+# In[20]:
 
 
 data.head(5)
 
 
-# Nous observons beaucoup de données manquantes. Regardons les variables avec plus de 80 %  de données manquantes.
+# Nous observons beaucoup de données manquantes.
 
-# In[ ]:
+# ## 2) Zoom sur les données manquantes
+
+#  Regardons les variables avec plus de 80 %  de données manquantes.
+
+# In[21]:
 
 
 tab=pk.del_Nan(data, 0.8,0, 0)
 
 
-# In[ ]:
+# In[22]:
 
 
 pd.set_option('display.max_rows', 500)
@@ -100,13 +106,13 @@ tab
 
 # Ces variables n'apportent pas suffisament d'information. Nous pouvons les supprimer.
 
-# In[ ]:
+# In[23]:
 
 
 pk.del_Nan(data, 0.8,1, 2)
 
 
-# In[ ]:
+# In[24]:
 
 
 data.shape
@@ -116,7 +122,7 @@ data.shape
 
 # Regardons si des variables ne sont pas utiles.
 
-# In[ ]:
+# In[25]:
 
 
 data.columns
@@ -127,7 +133,7 @@ data.columns
 # Voici les colonnes que nous supprimons : 
 # url, creator, created_t, image_url, image_small_url, last_modified_t, last_modified_datetime
 
-# In[ ]:
+# In[26]:
 
 
 data.drop(["url", "creator", "created_t","image_url","image_small_url", "last_modified_t", "last_modified_datetime"], axis=1, inplace=True)
@@ -135,13 +141,13 @@ data.drop(["url", "creator", "created_t","image_url","image_small_url", "last_mo
 
 # Ensuite, nous pouvons supprimer les variables avec des données uniques.
 
-# In[ ]:
+# In[27]:
 
 
 data=pk.data_uniqueone_string(data)
 
 
-# In[ ]:
+# In[28]:
 
 
 data.shape
@@ -149,21 +155,21 @@ data.shape
 
 # A présent, nous pouvons tracer la matrice des données manquantes pour mieux observer ces valeurs.
 
-# In[ ]:
+# In[29]:
 
 
 pk.matrix_vm(data, (16,8), (0.60, 0.64, 0.49))
 
 
-# Il reste beaucoup de données manquantes. Mais nous pouvons créer des catégories N.A pour les variables qualitatives
+# Il reste beaucoup de données manquantes. Mais nous pouvons créer des catégories N.A pour les variables qualitatives exceptées pour le nutrition_grade_fr.
 
-# In[ ]:
-
-
-pk.data_fillNA_string(data, "AUTRES")
+# In[30]:
 
 
-# In[ ]:
+pk.data_fillNA_string(data, "AUTRES", ["nutrition_grade_fr"])
+
+
+# In[31]:
 
 
 pk.matrix_vm(data, (14,8), (0.82, 0.28, 0.09))
@@ -172,27 +178,29 @@ pk.matrix_vm(data, (14,8), (0.82, 0.28, 0.09))
 # Il semble que des colonnes avec plus de 50% de données manquantes soient encore présentes.
 # Regardons de plus près ces colonnes.
 
-# In[ ]:
+# In[32]:
 
 
 missing_value_df = pk.data_missingTab(data)
 
 
-# In[ ]:
+# In[33]:
 
 
 def graph_int_bar(data_i, x_i, y_i, x_label_i, y_label_i, palette_color_i, title_i):
-    
+
     fig = px.bar(ms, x=x_i, y=y_i, color=y_i, 
              labels={x_i:x_label_i,y_i:y_label_i},
               color_continuous_scale=palette_color_i)
     fig.update_layout(
         title_text=title_i, # title of plot
+        plot_bgcolor= 'rgba(0, 0, 0, 0)'
     )
+    
     fig.show()
 
 
-# In[ ]:
+# In[34]:
 
 
 ms =missing_value_df.loc[missing_value_df["percent_missing"]>50]
@@ -201,7 +209,7 @@ graph_int_bar(ms, 'column_name', 'percent_missing', "Variables", "% - Valeurs ma
 
 # Nous décidons de supprimer ces colonnes.
 
-# In[ ]:
+# In[35]:
 
 
 pk.del_Nan(data, 0.5,1, 2)
@@ -209,7 +217,7 @@ pk.del_Nan(data, 0.5,1, 2)
 
 # Regardons les données manquantes restantes.
 
-# In[ ]:
+# In[36]:
 
 
 missing_value_df = pk.data_missingTab(data)
@@ -218,18 +226,38 @@ graph_int_bar(ms, 'column_name', 'percent_missing', "Variables", "% - Valeurs ma
 
 
 # Il reste peu de données manquantes. 
+
+# Supprimons les données qui n'ont aucune colonne quantitatives renseignées (fin _100g). En effet, ces colonnes nous permettront de réaliser notre analyse donc il nous faut au moins une information remplie pour une donnée.
+
+# In[54]:
+
+
+data=data.loc[(pd.isna(data.energy_100g)==False) | (pd.isna(data.carbohydrates_100g)==False) 
+              | (pd.isna(data.proteins_100g)==False) | (pd.isna(data.fat_100g)==False)
+        | (pd.isna(data["saturated_fat_100g"])==False) | (pd.isna(data["fiber_100g"])==False)
+         | (pd.isna(data["sugars_100g"])==False)
+        | (pd.isna(data["salt_100g"])==False)
+             | (pd.isna(data["sodium_100g"])==False)]
+
+
+# In[55]:
+
+
+data.shape
+
+
+# Il reste encore des données manquantes, mais les individus apportent suffisamment d'informations pour les conserver. 
 # 
-# Nous conservons nos données telle quelle pour ne pas perdre d'information.
 
 # Regardons quelques statistiques descriptives sur nos variables restantes.
 
-# In[ ]:
+# In[56]:
 
 
 data.describe()
 
 
-# In[ ]:
+# In[57]:
 
 
 data[data.select_dtypes(include=['object', 'string']).columns].describe()
@@ -237,35 +265,51 @@ data[data.select_dtypes(include=['object', 'string']).columns].describe()
 
 # Renommons les variables qui contiennent des tirets.
 
-# In[ ]:
+# In[58]:
 
 
 data = data.rename(columns={'saturated-fat_100g': 'saturated_fat_100g', 
                        'nutrition-score-fr_100g': 'nutrition_score_fr_100g'})
 
 
-# In[ ]:
+# In[59]:
 
 
 data.shape
 
 
 # Nous avons conservé 41 colonnes.
-# Passons au nettoyage de nos données.
+# Passons au nettoyage de nos données. 
 
-# ## Nettoyage des données
+# ## 3) Nettoyage des données
 
-# ### Détection des doublons
+# ### a) Formatage des données
 
 # Vérifions s'ils existent des doublons (toutes les colonnes identiques), mettons d'abord toutes les catégories en majuscule.
 
-# In[ ]:
+# In[41]:
+
+
+data.head(5)
+
+
+# In[42]:
 
 
 data=pk.data_majuscule(data)
 
 
-# In[ ]:
+# In[43]:
+
+
+data.head(5)
+
+
+# ### b) Vérification des doublons
+
+# Regardons s'il y a des lignes dupliquées
+
+# In[44]:
 
 
 data.duplicated().sum()
@@ -274,7 +318,7 @@ data.duplicated().sum()
 # On considère comme produit identique les lignes qui ont le même nom de produit et le même code barre.
 # En effet, il est noté que des articles différents peuvent avoir le même code barre.
 
-# In[ ]:
+# In[45]:
 
 
 data[['code', 'product_name']].duplicated().sum()
@@ -282,13 +326,13 @@ data[['code', 'product_name']].duplicated().sum()
 
 # Regardons ces doublons
 
-# In[ ]:
+# In[46]:
 
 
 data_doublons = data.loc[data[['code', 'product_name']].duplicated(keep=False),:]
 
 
-# In[ ]:
+# In[47]:
 
 
 data_doublons
@@ -302,7 +346,7 @@ data_doublons
 
 # Faisons une jointure entre notre dataframe de base et notre dataframe qui contient les lignes mal renseignées.
 
-# In[ ]:
+# In[48]:
 
 
 data_result = pd.merge(data, data_doublons, on=["code", "product_name"], how="outer", indicator=True,  suffixes=('', '_del') )
@@ -310,7 +354,7 @@ data_result = pd.merge(data, data_doublons, on=["code", "product_name"], how="ou
 
 # Maintenant que nous avons identifié ces lignes dans le dataframe de base, on peut les supprimer.
 
-# In[ ]:
+# In[49]:
 
 
 data_result = data_result.loc[data_result["_merge"] == "left_only"].drop("_merge", axis=1)
@@ -318,83 +362,31 @@ data_result = data_result.loc[data_result["_merge"] == "left_only"].drop("_merge
 
 # Conservons les colonnes de notre dataframe de base.
 
-# In[ ]:
+# In[50]:
 
 
 data_result = data_result[[c for c in data_result.columns if not c.endswith('_del')]]
 
 
-# In[ ]:
+# In[51]:
 
 
 data=data_result
 
 
-# In[ ]:
+# In[52]:
 
 
 data[['code', 'product_name']].duplicated().sum()
 
 
-# In[ ]:
-
-
-data.shape
-
-
-# Création d'une colonne présence possible d'huile de palme : 
-# Nous vérifions s'il y a de l'huile de palme possible et s'il y en a dans les ingredients.
-
-# In[ ]:
-
-
-data.loc[data.ingredients_text.str.contains('PALM')==True  , "ingredients_from_palm_oil"]="OUI"
-data.loc[data.ingredients_from_palm_oil_n>=1, "ingredients_from_palm_oil" ]="OUI"
-data.loc[data.ingredients_that_may_be_from_palm_oil_n>=2, "ingredients_from_palm_oil" ]="OUI"
-data['ingredients_from_palm_oil'].fillna("NON", inplace=True)
-
-
-# In[ ]:
-
-
-data.info()
-
-
-# In[ ]:
-
-
-pk.matrix_vm(data, (14,8), (0.43,0.51,0.38))
-
-
-# Supprimons les données qui n'ont aucune colonne quantitatives renseignées (fin _100g).
-# En effet, ces colonnes nous permettront de réaliser notre analyse donc il nous faut au moins une information remplie pour une donnée.
-
-# In[ ]:
-
-
-data=data.loc[(pd.isna(data.energy_100g)==False) | (pd.isna(data.carbohydrates_100g)==False) 
-              | (pd.isna(data.proteins_100g)==False) | (pd.isna(data.fat_100g)==False)
-        | (pd.isna(data["saturated_fat_100g"])==False) | (pd.isna(data["fiber_100g"])==False)
-         | (pd.isna(data["sugars_100g"])==False)
-        | (pd.isna(data["salt_100g"])==False)
-             | (pd.isna(data["sodium_100g"])==False)]
-
-
-# In[ ]:
-
-
-data.shape
-
-
-# Il reste encore certaines données manquantes, mais les individus apportent suffisamment d'informations pour les conserver. 
-# 
 # Passons à la prochaine étape : Etudions chacune de nos variables.
 
-# # Exploration des données
+# ## 4) Exploration des données
 
-# ### Variables quantitatives
+# ### a) Variables quantitatives
 
-# In[ ]:
+# In[45]:
 
 
 data.describe().round(2)
@@ -407,7 +399,7 @@ data.describe().round(2)
 
 # Traçons des stripplots pour toutes nos variables quantitatives. Ces graphiques permettent plus facilement d'observer les valeurs extrêmes pour de grands volumes de données.
 
-# In[ ]:
+# In[46]:
 
 
 for col in data.select_dtypes(include=['float64']).columns:
@@ -423,7 +415,7 @@ for col in data.select_dtypes(include=['float64']).columns:
 # 
 # source : https://sante.journaldesfemmes.fr/calories/classement/aliments/calories (provenant de l'Anses)
 
-# In[ ]:
+# In[47]:
 
 
 data=pk.delete_outliers_UPPER(data, data['energy_100g'], 901)
@@ -435,7 +427,7 @@ data=pk.delete_outliers_UPPER(data, data['energy_100g'], 901)
 # 
 # Calculons quand même un exemple pour la variable energy_100g
 
-# In[ ]:
+# In[48]:
 
 
 pk.outliers(data, data['energy_100g'],0)
@@ -448,7 +440,8 @@ pk.outliers(data, data['energy_100g'],0)
 
 # Supprimons les données supérieures à 100g et inférieurs ou égales à 0 pour les autres "nutriments".
 
-# In[ ]:
+# In[49]:
+
 
 
 data=pk.delete_outliers_UPPER(data, data['carbohydrates_100g'], 100)
@@ -471,7 +464,7 @@ data=pk.delete_outliers_LOWER(data, data['salt_100g'], 0)
 
 # Retraçons nos stripplot.
 
-# In[ ]:
+# In[50]:
 
 
 for col in data.select_dtypes(include=['float64']).columns:
@@ -482,7 +475,7 @@ for col in data.select_dtypes(include=['float64']).columns:
 
 # #### Commençons par la variable proteins_100g
 
-# In[ ]:
+# In[51]:
 
 
 def boxplot_int(data_var_i,y_label_i, palette_color_i , mean_i):
@@ -495,14 +488,15 @@ def boxplot_int(data_var_i,y_label_i, palette_color_i , mean_i):
     fig.update_yaxes(showline=True, linewidth=2, linecolor='#E3E3E3', gridcolor='#E3E3E3', mirror=True)
 
     if mean_i==1:
-        fig.add_trace(go.Box(y=data_var_i,name=y_label_i, 
+        fig.add_trace(go.Box(y=data_var_i, name=" ",
                         marker_color = palette_color_i, boxmean='sd'))
     else:
-        fig.add_trace(go.Box(y=data_var_i,name=y_label_i, 
+        fig.add_trace(go.Box(y=data_var_i, name=" ",
                         marker_color = palette_color_i))
     
     fig.update_layout(
         title_text="Boite à moustache de la variable "+y_label_i, # title of plot
+        yaxis_title=y_label_i
     )
     
 
@@ -510,20 +504,21 @@ def boxplot_int(data_var_i,y_label_i, palette_color_i , mean_i):
     fig.show()
 
 
-# In[ ]:
+# In[52]:
 
 
-boxplot_int(data.proteins_100g, "Protéine", "indianred",0 )
+boxplot_int(data.proteins_100g, "Proteins_100g", "indianred",0 )
 
 
 # L'aliment le plus protéiné est : gélatine alimentaire	87,6 g
 # 
 # 
 # source : https://sante.journaldesfemmes.fr/calories/classement/aliments/proteines
+# 
 
 # Supprimons les données qui ont des protéines supérieures à 89g.
 
-# In[ ]:
+# In[53]:
 
 
 data = data.loc[data["proteins_100g"]<=89]
@@ -531,10 +526,10 @@ data = data.loc[data["proteins_100g"]<=89]
 
 # Regardons à nouveau la boxenplot de la variable proteins_100g.
 
-# In[ ]:
+# In[54]:
 
 
-boxplot_int(data.proteins_100g, "Protéine", "indianred",1 )
+boxplot_int(data.proteins_100g, "proteins_100g", "indianred",1 )
 
 
 # Il reste quelques valeurs extrêmes mais elles sont cohérentes, donc on les conserve pour ne pas perdre d'information.
@@ -547,13 +542,13 @@ boxplot_int(data.proteins_100g, "Protéine", "indianred",1 )
 
 # source: https://sante.journaldesfemmes.fr/calories/classement/aliments/acides-gras-satures
 
-# In[ ]:
+# In[55]:
 
 
 data = data.loc[data["saturated_fat_100g"]<=93]
 
 
-# In[ ]:
+# In[56]:
 
 
 def graph_int_violin(data_var_i, fillcolor_i, x_label_i):
@@ -562,18 +557,20 @@ def graph_int_violin(data_var_i, fillcolor_i, x_label_i):
     # Use that layout here
     fig = go.Figure(data=go.Violin(y=data_var_i, box_visible=True, line_color='black',
                                meanline_visible=True, fillcolor=fillcolor_i, opacity=0.6,
-                               x0=x_label_i), layout=layout)
+                               x0=" "), layout=layout)
 
 
     fig.update_xaxes(showline=True, linewidth=2, linecolor='#E3E3E3', gridcolor='#E3E3E3', mirror=True )
     fig.update_yaxes(showline=True, linewidth=2, linecolor='#E3E3E3', gridcolor='#E3E3E3', mirror=True)
 
     
-    fig.update_layout(title_text="Violinplot de la variable "+x_label_i, yaxis_zeroline=False)
+    fig.update_layout(title_text="Violinplot de la variable "+x_label_i, 
+                      yaxis_zeroline=False,
+                          yaxis_title=x_label_i)
     fig.show()
 
 
-# In[ ]:
+# In[57]:
 
 
 graph_int_violin(data['saturated_fat_100g'], "#6D8260", "saturated_fat_100g")
@@ -587,7 +584,7 @@ graph_int_violin(data['saturated_fat_100g'], "#6D8260", "saturated_fat_100g")
 
 # source: https://sante.journaldesfemmes.fr/calories/classement/aliments/fibres
 
-# In[ ]:
+# In[58]:
 
 
 data = data.loc[data["fiber_100g"]<=45]
@@ -595,7 +592,7 @@ data = data.loc[data["fiber_100g"]<=45]
 
 # Traçons un violinplot pour observer ces modifications
 
-# In[ ]:
+# In[59]:
 
 
 graph_int_violin(data['fiber_100g'], "#6D8260", "fiber_100g")
@@ -607,7 +604,7 @@ graph_int_violin(data['fiber_100g'], "#6D8260", "fiber_100g")
 
 # Traçons un boxenplot qui est comme une boite à moustache sauf qu'il a plus de quantiles.
 
-# In[ ]:
+# In[60]:
 
 
 pk.graph_boxenplot(data, "salt_100g", (0.82, 0.28, 0.09),"Boxenplot du sel contenu (sur 100g) dans les aliments",(8,6))
@@ -621,13 +618,13 @@ pk.graph_boxenplot(data, "salt_100g", (0.82, 0.28, 0.09),"Boxenplot du sel conte
 
 # Supprimons les données supérieurs à 41g.
 
-# In[ ]:
+# In[61]:
 
 
 data = data.loc[data["salt_100g"]<=40]
 
 
-# In[ ]:
+# In[62]:
 
 
 boxplot_int(data.salt_100g, "salt_100g", "indianred",1 )
@@ -637,14 +634,14 @@ boxplot_int(data.salt_100g, "salt_100g", "indianred",1 )
 
 # #### Maintenant que nous avons supprimé nos données aberrantes, nous pouvons recalculer nos statistiques et retracer des violinplots
 
-# In[ ]:
+# In[63]:
 
 
 for col in data.select_dtypes(include=['float64']).columns:
     pk.graph_boxplot(data, col, "Boite à moustache de la variable "+col, "#6D8260", (14,8))
 
 
-# In[ ]:
+# In[64]:
 
 
 data.describe().round(2)
@@ -667,10 +664,11 @@ data.describe().round(2)
 # - 75% des aliments ont moins de 1.90g de fibres et moins de 6.59g de protéines
 # 
 # De plus, nous savons que 75% de nos aliments ont une note au nutriscore fr inférieure à 5 et que le maximum est 32.
+# 
 
 # #### Maintenant, étudions les distributions de nos différentes variables.
 
-# In[ ]:
+# In[65]:
 
 
 def hist_int(data_var_i, color_i, title_i, x_label_i, y_label_i):
@@ -705,7 +703,7 @@ def hist_int(data_var_i, color_i, title_i, x_label_i, y_label_i):
     fig.show()
 
 
-# In[ ]:
+# In[66]:
 
 
 for col in data.select_dtypes(include=['float64']).columns:
@@ -721,7 +719,7 @@ for col in data.select_dtypes(include=['float64']).columns:
 # - Si y1>0 alors la distribution est étalée à droite.
 # - Si y1<0 alors la distribution est étalée à gauche.
 
-# In[ ]:
+# In[67]:
 
 
 for col in data.select_dtypes(include=['float64']).columns:
@@ -739,7 +737,7 @@ for col in data.select_dtypes(include=['float64']).columns:
 # 
 # Si γ2<0 , alors les observations sont moins concentrées : la distribution est plus aplatie.
 
-# In[ ]:
+# In[68]:
 
 
 for col in data.select_dtypes(include=['float64']).columns:
@@ -755,7 +753,7 @@ for col in data.select_dtypes(include=['float64']).columns:
 # - h0 = la distribution est normale. (p-value > 0.05)
 # - h1 = la distribution n'est pas normale. (p-value < 0.05)
 
-# In[ ]:
+# In[69]:
 
 
 for col in data.select_dtypes(include=['float64']).columns:
@@ -768,44 +766,93 @@ for col in data.select_dtypes(include=['float64']).columns:
 
 # ### Créons des regroupements afin que nos distributions soient mieux réparties et que nos variables soient plus pertinentes pour la suite.
 # 
-# Nous appliquerons un système de note en fonction des intervalles : 
+# Afin d'améliorer la santé des français, nous savons qu'il y a certains seuils en
 # - si l'apport nutritionnel fait partie des aliments dit positifs : -6, -4,-2,0,2,4,6,8,10 ...Etc
 # - si l'apport nutritionnel fait partie des aliments dit négatifs : 2,4,6,8,10..Etc
 
 # #### Commençons par la variable additives_n
 
-# In[ ]:
+# In[70]:
+
+
+def graph_barplot_by_group(data, column, group, color_i):   
+    grouped = data.loc[data['nutrition_grade_fr']!="AUTRES"].groupby(['nutrition_grade_fr'], sort=False)
+    reg_carbohydrates_counts = grouped[column].value_counts(normalize=True, sort=False)
+
+    occupation_data = [
+        {'reg': column, 'nutrition_grade_fr': nutrition_grade_fr, 'percentage': percentage*100} for 
+        (nutrition_grade_fr, column), percentage in dict(reg_carbohydrates_counts).items()
+    ]
+
+    df_occupation = pd.DataFrame(occupation_data)
+
+    p = sns.barplot(x="reg", y="percentage", hue="nutrition_grade_fr", data=df_occupation)
+    _ = plt.setp(p.get_xticklabels(), rotation=90)  # Rotate labels
+
+
+# In[71]:
 
 
 pk.graph_hist(data["additives_n"],[0,2,4,6,8,10,24] ,"Distribution des produits en fonction de la variable additives_n",
-              "#6D8260", 0,24, 2, 0, 50000, "additives_n", 'Fréquences',(11,7))
+              "#6D8260", 0,24, 2, 0, 45000, "additives_n", 'Fréquences',(11,7))
+
+
+# Utilisons l'algorithme de Fisher-Jenks pour détecter les ruptures naturelles. Réalisons 5 groupes comme le nutriscore.
+
+# In[72]:
+
+
+
+data_add=data.loc[pd.isna(data['additives_n'])==False]
+breaks = jenkspy.jenks_breaks(data_add['additives_n'], nb_class=6)
+
+
+# In[73]:
+
+
+breaks=list(set(breaks))
+breaks
+label = [1,2,3,4,5]
+
+
+# In[74]:
+
+
+label
+
+
+# In[75]:
+
+
+data.describe()
+
+
+# In[76]:
+
+
+data['reg_additives'] = pd.cut(data['additives_n'] , bins=breaks, labels=label, include_lowest=True).to_numpy()
 
 
 # In[ ]:
 
 
-def reg_add(x):
-    if x<1:
-        return 0
-    elif x>=1 and x<2:
-        return 2
-    elif x>=2 and x<4:
-        return 4
-    elif x>=4 and x<6:
-        return 6
-    elif x>=6 and x<8:
-        return 8
-    elif x>=8:
-        return 10
 
 
-# In[ ]:
+
+# Créons une fonction pour les regroupements, elle utilisera l'algorithme de Fisher-Jenks.
+
+# In[77]:
 
 
-data['reg_additives']=data.apply(lambda row: reg_add(row.additives_n), axis=1)
+def reg_fisher_jenks(data, colonne, new_colonne, nb_bin):
+    data_add=data.loc[pd.isna(data[colonne])==False]
+    breaks = jenkspy.jenks_breaks(data_add[colonne], nb_class=nb_bin)
+    label = [1,2,3,4,5]
+    #breaks=list(set(breaks))
+    data[new_colonne] = pd.cut(data[colonne] , bins=breaks, labels=label[:nb_bin], include_lowest=True).to_numpy()
 
 
-# In[ ]:
+# In[78]:
 
 
 pk.graph_barplot(data['reg_additives'], "Répartition des aliments en fonction des additifs", 
@@ -813,40 +860,38 @@ pk.graph_barplot(data['reg_additives'], "Répartition des aliments en fonction d
               0, 70, "Intervalle - additives", "Fréquence en %",70, 1,(11,7))
 
 
+# In[79]:
+
+
+pk.graph_barplot(data['reg_additives'], "Répartition des aliments en fonction des additifs", 
+              (0.82, 0.28, 0.09),
+              0, 70, "Intervalle - additives", "Fréquence en %",70, 1,(11,7))
+
+
+# In[80]:
+
+
+graph_barplot_by_group(data, 'reg_additives', 'group', '#6D8260')
+
+
 # Notre distribution est mieux répartie. Conservons ce regroupement.
 # 
 # #### Passons à la variable energy_100g
 
-# In[ ]:
+# In[81]:
 
 
 pk.graph_hist(data["energy_100g"],[0,200,400,600,800,901], "Distribution des produits en fonction de la variable energy_100g","#6D8260",
           0,901, 200, 0, 30000 , "energy_100g", 'Fréquences',(11,7))
 
 
-# In[ ]:
+# In[82]:
 
 
-def reg_energy(x):
-    if x<200:
-        return 1
-    elif x>=200 and x<350:
-        return 2
-    elif x>=350 and x<500:
-        return 3
-    elif x>=500 and x<700:
-        return 4
-    elif x>=700:
-        return 5
+reg_fisher_jenks(data, "energy_100g", "reg_energy", 5)
 
 
-# In[ ]:
-
-
-data['reg_energy']=data.apply(lambda row: reg_energy(row.energy_100g), axis=1)
-
-
-# In[ ]:
+# In[83]:
 
 
 pk.graph_barplot(data['reg_energy'], "Répartition des aliments en fonction des calories", 
@@ -854,52 +899,48 @@ pk.graph_barplot(data['reg_energy'], "Répartition des aliments en fonction des 
               0, 35, "Classe energie", "Fréquence en %",70, 1,(11,7))
 
 
+# In[84]:
+
+
+graph_barplot_by_group(data, 'reg_energy', 'group', '#6D8260')
+
+
 # Notre distribution est mieux répartie.
 # 
 # #### Etudions la distribution de la variable fat_100g
 
-# In[ ]:
+# In[85]:
 
 
 pk.graph_hist(data["fat_100g"],[0,5,10,15,20,25,100], "Distribution des produits en fonction de la variable fat_100g",
               "#6D8260", 0,100, 5, 0, 65000 , "fat_100g", 'Fréquences',(11,7))
 
 
-# In[ ]:
+# In[86]:
 
 
-def reg_fat(x):
-    if x<1:
-        return 0
-    elif x>=1 and x<4:
-        return 2
-    elif x>=4 and x<6:
-        return 3
-    elif x>=6 and x<10:
-        return 4
-    elif x>=10:
-        return 5
+reg_fisher_jenks(data, "fat_100g", "reg_fat", 5)
 
 
-# In[ ]:
-
-
-data['reg_fat']=data.apply(lambda row: reg_fat(row.fat_100g), axis=1)
-
-
-# In[ ]:
+# In[87]:
 
 
 pk.graph_barplot(data['reg_fat'], "Répartition des aliments en fonction des matières grasses", 
               (0.82, 0.28, 0.09),
-              0, 50, "Classe fat_100g", "Fréquence en %",70, 1,(11,7))
+              0, 70, "Classe fat_100g", "Fréquence en %",70, 1,(11,7))
+
+
+# In[88]:
+
+
+graph_barplot_by_group(data, 'reg_fat', 'group', '#6D8260')
 
 
 # Nous validons ce regroupement.
 # 
 # #### Passons à la variable saturated_fat_100g
 
-# In[ ]:
+# In[89]:
 
 
 pk.graph_hist(data["saturated_fat_100g"],[0,4,8,90], "Distribution des produits en fonction de la variable fat_100g",
@@ -907,78 +948,56 @@ pk.graph_hist(data["saturated_fat_100g"],[0,4,8,90], "Distribution des produits 
           0,100, 5, 0, 85000 , "saturated_fat_100g", 'Fréquences',(11,7))
 
 
-# In[ ]:
+# In[90]:
 
 
-def reg_saturated_fat(x):
-    if x<=0:
-        return -1
-    elif x>=1 and x<4:
-        return 4
-    elif x>=4 and x<8:
-        return 8
-    elif x>=8 and x<40:
-        return 40
-    elif x>=40:
-        return 90
+reg_fisher_jenks(data, "saturated_fat_100g", "reg_saturated_fat", 5)
 
 
-# In[ ]:
-
-
-data['reg_saturated_fat']=data.apply(lambda row: reg_saturated_fat(row.saturated_fat_100g), axis=1)
-
-
-# In[ ]:
+# In[91]:
 
 
 pk.graph_barplot(data['reg_saturated_fat'], "Répartition des aliments en fonction des matières grasses saturées", 
               (0.82, 0.28, 0.09),
-              0, 70, "Note saturated_fat", "Fréquence en %",70, 1,(11,7))
+              0, 80, "Note saturated_fat", "Fréquence en %",70, 1,(11,7))
+
+
+# In[92]:
+
+
+graph_barplot_by_group(data, 'reg_fat', 'group', '#6D8260')
 
 
 # Nous conservons ce regroupement.
 
 # #### Etudions la variable carbohydrates_100g
 
-# In[ ]:
+# In[93]:
 
 
 pk.graph_hist(data["carbohydrates_100g"],[0,5,10,15,20,25,30,35,40,45,50,55,60,65,70,100], 
               "Distribution des produits en fonction de la variable carbohydrate_100g",
               "#6D8260",
-          0,100, 15, 0, 25000 , "carbohydrates_100g", 'Fréquences',(11,7))
+          0,100, 15, 0, 20000 , "carbohydrates_100g", 'Fréquences',(11,7))
 
 
-# In[ ]:
+# In[94]:
 
 
-def reg_carbohydrates(x):
-    if x<5:
-        return 1
-    elif x>=5 and x<10:
-        return 3
-    elif x>=15 and  x<25:
-        return 5
-    elif x>=25:
-        return 10
+reg_fisher_jenks(data, "carbohydrates_100g", "reg_carbohydrates", 5)
 
 
-# In[ ]:
-
-
-data['reg_carbohydrates']=data.apply(lambda row: reg_carbohydrates(row.carbohydrates_100g), axis=1)
-
-
-# In[ ]:
+# In[95]:
 
 
 pk.graph_barplot(data['reg_carbohydrates'], "Répartition des aliments en fonction des carbohydrates", 
               (0.82, 0.28, 0.09),
-              0, 40, "Note carbohydrates", "Fréquence en %",70, 1,(11,7))
+              0, 50, "Note carbohydrates", "Fréquence en %",70, 1,(11,7))
 
 
-# In[ ]:
+# #### Passons à la variable fiber_100g
+
+# In[96]:
 
 
 pk.graph_hist(data["fiber_100g"],[0,1,2,3,4,5,6,7,8,100], 
@@ -987,37 +1006,29 @@ pk.graph_hist(data["fiber_100g"],[0,1,2,3,4,5,6,7,8,100],
           0,100, 15, 0, 45000 , "fiber_100g", 'Fréquences',(11,7))
 
 
-# In[ ]:
+# In[97]:
 
 
-def reg_fiber(x):
-    if x<1:
-        return 2
-    elif x>=1 and x<3:
-        return -3
-    elif x>=3 and x<5:
-        return -5
-    elif x>=5 and x<7:
-        return -10
-    elif x>=7:
-        return -15
+reg_fisher_jenks(data, "fiber_100g", "reg_fiber", 5)
 
 
-# In[ ]:
-
-
-data['reg_fiber']=data.apply(lambda row: reg_fiber(row.fiber_100g), axis=1)
-
-
-# In[ ]:
+# In[98]:
 
 
 pk.graph_barplot(data['reg_fiber'], "Répartition des aliments en fonction des fibres", 
               (0.82, 0.28, 0.09),
-              0, 60, "Classe fibres", "Fréquence en %",0, 1,(11,7))
+              0, 65, "Classe fibres", "Fréquence en %",0, 1,(11,7))
 
 
-# In[ ]:
+# In[280]:
+
+
+graph_barplot_by_group(data, 'reg_fiber', 'group', '#6D8260')
+
+
+# #### Regroupons les données au sein de la variable proteins_100g
+
+# In[100]:
 
 
 pk.graph_hist(data["proteins_100g"],[0,10,15,20,50,100], 
@@ -1025,29 +1036,58 @@ pk.graph_hist(data["proteins_100g"],[0,10,15,20,50,100],
           0,100, 15, 0, 80000 , "proteins_100g", 'Fréquences',(11,7))
 
 
-# In[ ]:
+# In[101]:
 
 
-def reg_protein(x):
-    if x<=0:
-        return 4
-    elif x>=1 and x<2:
-        return 1
-    elif x>=2 and x<4:
-        return 0
-    elif x>=4 and x<8:
-        return -3
-    elif x>=8 and x<15:
-        return -4
-    elif x>=15:
-        return -5
-data['reg_protein']=data.apply(lambda row: reg_protein(row.proteins_100g), axis=1)
+reg_fisher_jenks(data, "proteins_100g", "reg_protein", 5)
+
+
+# In[102]:
+
+
+
 pk.graph_barplot(data['reg_protein'], "Répartition des aliments en fonction des protéines", 
               (0.82, 0.28, 0.09),
-              0, 25, "Note protéine", "Fréquence en %",0, 1,(11,7))
+              0, 50, "classe protéine", "Fréquence en %",0, 1,(11,7))
+
+
+# In[279]:
+
+
+graph_barplot_by_group(data, 'reg_protein', 'group', '#6D8260')
 
 
 # Nous utiliserons ce regroupement.
+
+# #### Etudions la variable salt_100g
+
+# In[202]:
+
+
+
+pk.graph_hist(data["salt_100g"],[0,2,4,6,8,10,40], "Distribution des produits en fonction de la variable salt_100g","#6D8260",
+          0,40, 5, 0, 80000 , "salt_100g", 'Fréquences',(11,7))
+
+
+# In[203]:
+
+
+reg_fisher_jenks(data, "salt_100g", "reg_salt", 5)
+
+
+# In[207]:
+
+
+pk.graph_barplot(data['reg_salt'], "Répartition des aliments en fonction de leur teneur en sel", 
+              (0.82, 0.28, 0.09),
+              0, 70, "Classe salt", "Fréquence en %",70, 1,(11,7))
+
+
+# In[209]:
+
+
+graph_barplot_by_group(data, 'reg_salt', 'group', '#6D8260')
+
 
 # ## Conclusion des variables quantitatives
 
@@ -1065,18 +1105,25 @@ pk.graph_barplot(data['reg_protein'], "Répartition des aliments en fonction des
 # 
 # 
 # Nous avons dans notre base de données des aliments peu calorique, peu gras et peu salé. Mais ils contiennent peu de fibre et peu de protéines.
+# 
 
 # Regardons à présent ce que peut nous apprendre les variables qualitatives sur notre population.
 
-# ### Variables qualitatives
+# In[1620]:
 
-# In[ ]:
+
+data.describe()
+
+
+# ###  b) Variables qualitatives
+
+# In[1621]:
 
 
 data.info()
 
 
-# In[ ]:
+# In[1622]:
 
 
 data[data.select_dtypes(include=['object', 'string']).columns].describe(include='all').round(2)
@@ -1086,6 +1133,9 @@ data[data.select_dtypes(include=['object', 'string']).columns].describe(include=
 # Nous observons aussi que le mode est la modalité B pour le nutriscore Fr et la modalité "NON" pour la variable "ingredients_from_palm_oil".
 # 
 # Etudions chaque variable pour obtenir plus d'information sur leur répartition.
+# 
+# 
+# 
 
 # #### Commençons par la variable product_name
 
@@ -1093,7 +1143,7 @@ data[data.select_dtypes(include=['object', 'string']).columns].describe(include=
 # 
 # Regardons le top 10.
 
-# In[ ]:
+# In[1623]:
 
 
 data["product_name"].value_counts(normalize=True).head(10)
@@ -1107,7 +1157,7 @@ data["product_name"].value_counts(normalize=True).head(10)
 # 
 # Pour rappel, ces données nous renseigne sur la quantité contenu dans les produits (avec l'unité utilisé)
 
-# In[ ]:
+# In[104]:
 
 
 data["quantity"].value_counts(normalize=True).head(10)
@@ -1117,13 +1167,13 @@ data["quantity"].value_counts(normalize=True).head(10)
 # 
 # Retirons cette modalité et regardons à nouveau le top 10.
 
-# In[ ]:
+# In[105]:
 
 
 data_autres=data.loc[data['quantity']!="AUTRES"]
 
 
-# In[ ]:
+# In[106]:
 
 
 data_autres["quantity"].value_counts(normalize=True).head(10)
@@ -1132,8 +1182,10 @@ data_autres["quantity"].value_counts(normalize=True).head(10)
 # 3.7% des aliments contiennent 300g et 1% des aliments contiennent 600g.
 # 
 # Les données sont très éparpillées au sein des modalités et sont à des échelles différentes. Elle nous apporte pas d'information supplémentaire, nous pouvons la supprimer.
+# 
+# 
 
-# In[ ]:
+# In[107]:
 
 
 del data["quantity"]
@@ -1145,7 +1197,7 @@ del data["quantity"]
 
 # Ces variables contiennent aussi beaucoup de catégorie. Etudions les top 10.
 
-# In[ ]:
+# In[108]:
 
 
 data["packaging"].value_counts(normalize=True).head(10)
@@ -1156,14 +1208,14 @@ data["packaging"].value_counts(normalize=True).head(10)
 
 # Excluons la catégorie "AUTRES"
 
-# In[ ]:
+# In[109]:
 
 
 data_autres=data.loc[data['packaging']!="AUTRES"]
 data_autres["packaging"].value_counts(normalize=True).head(10)
 
 
-# In[ ]:
+# In[110]:
 
 
 data_autres=data.loc[data['packaging_tags']!="AUTRES"]
@@ -1172,20 +1224,21 @@ data_autres["packaging_tags"].value_counts(normalize=True).head(10)
 
 # Les catégories ne sont pas très pertinentes pour ces deux variables. En effet, nous avons 3% des aliments qui sont dans des conserves et 0.09% des aliments qui sont dans des conserves,métal. Nous pouvons les exclure.
 
-# In[ ]:
+# In[111]:
 
 
 del data["packaging"]
 del data["packaging_tags"]
 
 
-# In[ ]:
+# In[112]:
 
 
 data["brands"].nunique()
 
 
-# In[ ]:
+# In[113]:
+
 
 
 max(data_autres["brands"].value_counts(normalize=True))
@@ -1193,7 +1246,7 @@ max(data_autres["brands"].value_counts(normalize=True))
 
 # Créons une fonction qui supprime les variables qui ont un seuil de catégorie important et qui sont très dispersées.
 
-# In[ ]:
+# In[114]:
 
 
 def del_quali_norelevant(data,identifiant,  delete_i, del_seuilcat_i, del_seuilfreq_i, all_i):
@@ -1211,20 +1264,20 @@ def del_quali_norelevant(data,identifiant,  delete_i, del_seuilcat_i, del_seuilf
 
 # On supprime les colonnes avec plus de 500 catégorie et dont le maximum de la fréquence d'une modalité est inférieur à 0.05
 
-# In[ ]:
+# In[115]:
 
 
 del_quali_norelevant(data,["code", "created_datetime", "product_name", "countries", "countries_tags",
                           "ingredients_text"], 1, 500, 0.05, 0)
 
 
-# In[ ]:
+# In[116]:
 
 
 data.columns
 
 
-# In[ ]:
+# In[117]:
 
 
 data[data.select_dtypes(include=['object', 'string']).columns].describe(include='all').round(2)
@@ -1232,43 +1285,43 @@ data[data.select_dtypes(include=['object', 'string']).columns].describe(include=
 
 # #### Etudions la variable main_category
 
-# In[ ]:
+# In[118]:
 
 
 data_autres=data.loc[data['main_category']!="AUTRES"]
 
 
-# In[ ]:
+# In[119]:
 
 
 data_autres["main_category"].value_counts(normalize=True).head(10)
 
 
-# In[ ]:
+# In[120]:
 
 
 cat_top= data["main_category"].value_counts(normalize=True).head(10).reset_index(name="values")
 
 
-# In[ ]:
+# In[121]:
 
 
 cat_top["index"]
 
 
-# In[ ]:
+# In[122]:
 
 
 data_cat = data_autres.loc[ data['main_category'].isin(cat_top["index"])==True]
 
 
-# In[ ]:
+# In[123]:
 
 
 data[data.select_dtypes(include=['object', 'string']).columns].describe(include='all').round(2)
 
 
-# In[ ]:
+# In[124]:
 
 
 pk.graph_bubbleplot(data_cat['main_category'], 'g',"main_category", "Fréquence en %", 
@@ -1283,7 +1336,7 @@ pk.graph_bubbleplot(data_cat['main_category'], 'g',"main_category", "Fréquence 
 
 # #### Regardons la variable ingredients_text
 
-# In[ ]:
+# In[125]:
 
 
 data["ingredients_text"].head(5)
@@ -1294,7 +1347,7 @@ data["ingredients_text"].head(5)
 
 # #### Etudions les variables states, states_tags et state_fr
 
-# In[ ]:
+# In[126]:
 
 
 data["states"].unique()
@@ -1302,7 +1355,7 @@ data["states"].unique()
 
 # Ce sont des informations sur l'état de la fiche aliment. Nous pouvons supprimer ces variables.
 
-# In[ ]:
+# In[127]:
 
 
 data.drop(["states", "states_tags", "states_fr"], axis=1, inplace=True)
@@ -1314,13 +1367,13 @@ data.drop(["states", "states_tags", "states_fr"], axis=1, inplace=True)
 
 # Regardons le top 10.
 
-# In[ ]:
+# In[128]:
 
 
 data_autres["additives_tags"].value_counts(normalize=True).head(10)
 
 
-# In[ ]:
+# In[129]:
 
 
 data_autres["additives_fr"].value_counts(normalize=True).head(10)
@@ -1333,7 +1386,7 @@ data_autres["additives_fr"].value_counts(normalize=True).head(10)
 # De plus, nous avons une colonne qui contient le nombre d'additifs, et ces colonnes ne sont pas très parlantes.
 # Nous décidons de les supprimer.
 
-# In[ ]:
+# In[130]:
 
 
 data.drop(["additives_fr", "additives_tags"], axis=1, inplace=True)
@@ -1341,7 +1394,7 @@ data.drop(["additives_fr", "additives_tags"], axis=1, inplace=True)
 
 # #### Analysons à présent la variable nutrition_grade_fr
 
-# In[ ]:
+# In[131]:
 
 
 pk.graph_barplot(data['nutrition_grade_fr'], "Répartition des produits selon le nutrition grade", 
@@ -1355,14 +1408,15 @@ pk.graph_barplot(data['nutrition_grade_fr'], "Répartition des produits selon le
 
 # Traçons un graphique pour observer la répartition des aliments au sein de cette variable
 
-# In[ ]:
+# In[132]:
+
 
 
 t = pd.crosstab(data.ingredients_from_palm_oil, "freq", normalize=True)
 t = t.assign(column = t.index, freq = 100 * t.freq)
 
 
-# In[ ]:
+# In[133]:
 
 
 fig = px.pie(t, t.column, t.freq , color_discrete_sequence=px.colors.sequential.RdBu)
@@ -1375,7 +1429,7 @@ fig.show()
 
 # Traçons un graphique circulaire pour étudier la répartition des aliments au sein de ces variables.
 
-# In[ ]:
+# In[134]:
 
 
 import plotly.express as px
@@ -1386,27 +1440,41 @@ fig.show()
 
 # Excluons la catégorie "Autres" qui représente 57% des aliments et renommons la catégorie "Unknown" en "AUTRES".
 
-# In[ ]:
+# In[135]:
 
 
 data['pnns_groups_1'].unique()
 
 
-# In[ ]:
+# In[136]:
 
 
 data.head(20)
 
 
-# In[ ]:
+# In[137]:
 
 
 data['pnns_groups_1'] = data['pnns_groups_1'].str.replace("UNKNOWN",'AUTRES')
+data['pnns_groups_1'] = data['pnns_groups_1'].str.replace("-",' ')
 data['pnns_groups_2'] = data['pnns_groups_2'].str.replace("UNKNOWN",'AUTRES')
+data['pnns_groups_2'] = data['pnns_groups_2'].str.replace("-",' ')
 data_autres=data.loc[(data.pnns_groups_1!="AUTRES") & (data.pnns_groups_2!="AUTRES") ] 
 
 
-# In[ ]:
+# In[138]:
+
+
+pk.graph_circle(data["pnns_groups_1"], "pnns_groups_1", "Répartition des aliments en fonction de leur catégorie")
+
+
+# In[139]:
+
+
+pk.graph_circle(data_autres["pnns_groups_1"], "pnns_groups_1", "Répartition des aliments en fonction de leur catégorie (hors modalité autres)")
+
+
+# In[140]:
 
 
 import plotly.express as px
@@ -1419,7 +1487,8 @@ fig.show()
 
 # #### Décrivons nos données en regardons le nombre d'aliments par date de création des fiches.
 
-# In[ ]:
+# In[141]:
+
 
 
 data['year'] = pd.DatetimeIndex(data['created_datetime']).year
@@ -1427,38 +1496,42 @@ data['month'] =pd.DatetimeIndex(data['created_datetime']).month
 data["year_month"]=pd.DatetimeIndex(data['created_datetime']).strftime("%Y/%m")
 
 
-# In[ ]:
+# In[142]:
 
 
 data
 
 
-# In[ ]:
+# In[143]:
 
 
 data.columns
 
 
-# In[ ]:
+# In[144]:
 
 
 data_month=data[["year", "month", "nutrition_grade_fr"]].value_counts().reset_index(name="value")
 
 
-# In[ ]:
+# In[145]:
 
 
 data_month
 
 
-# In[ ]:
+# In[146]:
+
 
 
 
 fig = px.scatter(data_month, x="month", y="value", animation_frame="year", animation_group="nutrition_grade_fr",
            color="nutrition_grade_fr", 
            log_x=True, size_max=55)
-
+fig.update_layout(
+        title_text="Nombre d'aliments par mois et par an", # title of plot
+       # plot_bgcolor= 'rgba(0, 0, 0, 0)'
+    )
 fig["layout"].pop("updatemenus") # optional, drop animation buttons
 fig.show()
 
@@ -1469,49 +1542,49 @@ fig.show()
 
 # Nous avons besoin d'importer les pays et leur code iso.
 
-# In[ ]:
+# In[147]:
 
 
 info_countries=pd.read_json(".\data\countries.json")
 
 
-# In[ ]:
+# In[148]:
 
 
 info_countries
 
 
-# In[ ]:
+# In[149]:
 
 
 info_countries=pk.data_majuscule(info_countries)
 
 
-# In[ ]:
+# In[150]:
 
 
 info_countries = info_countries.rename(columns={'name': 'countries_tags'})
 
 
-# In[ ]:
+# In[151]:
 
 
 data.countries_tags.unique()
 
 
-# In[ ]:
+# In[152]:
 
 
 data.countries_tags=data.countries_tags.str.replace("EN:","")
 
 
-# In[ ]:
+# In[153]:
 
 
 data.countries_tags=data.countries_tags.str.replace("UNITED-STATES","UNITED STATES OF AMERICA")
 
 
-# In[ ]:
+# In[154]:
 
 
 data.countries_tags
@@ -1519,62 +1592,62 @@ data.countries_tags
 
 # !nous pouvons à présent ajouter lke code iso dans notre base de données.
 
-# In[ ]:
+# In[155]:
 
 
 data_merge = pd.merge(data, info_countries, how="left", on=["countries_tags"], indicator=True,  suffixes=('', '_del'))
 
 
-# In[ ]:
+# In[156]:
 
 
 data_merge
 
 
-# In[ ]:
+# In[157]:
 
 
 data_merge.alpha3
 
 
-# In[ ]:
+# In[158]:
 
 
 data_result = data_merge.loc[data_merge["_merge"] == "both"].drop("_merge", axis=1)
 data_result = data_result[[c for c in data_result.columns if not c.startswith('id') |c.startswith('alpha2') | c.endswith('_del') ]]
 
 
-# In[ ]:
+# In[159]:
 
 
 data_result.alpha3.unique()
 
 
-# In[ ]:
+# In[160]:
 
 
 data= data_result
 
 
-# In[ ]:
+# In[161]:
 
 
 data.alpha3.unique()
 
 
-# In[ ]:
+# In[162]:
 
 
 maptest=data[["alpha3", "nutrition_grade_fr", "countries_tags"]].value_counts().reset_index(name="value")
 
 
-# In[ ]:
+# In[163]:
 
 
 maptest
 
 
-# In[ ]:
+# In[164]:
 
 
 import plotly.express as px
@@ -1585,11 +1658,11 @@ fig = px.scatter_geo(maptest, locations="alpha3", color="nutrition_grade_fr",
 fig.show()
 
 
-# La majorité de nos aliments proviennent des USA.
+# La majorité de nos aliments sont vendus aux USA.
 
 # #### Analysons à présent la variable nutrition_grade_fr
 
-# In[ ]:
+# In[165]:
 
 
 pk.graph_barplot(data['nutrition_grade_fr'], "Répartition des produits selon le nutrition grade", 
@@ -1614,9 +1687,11 @@ pk.graph_barplot(data['nutrition_grade_fr'], "Répartition des produits selon le
 
 # Maintenant que nous connaissons nos données. Il est important de pouvoir faire un zoom sur le nutriscore afin d'améliorer la santé des français.
 
-# # Est-ce que le nutriscore contribue à améliorer la santé des français ? Dans ce but, est ce que le nutriscore permet de manger équilibrer ?
+# # III - Est-ce que le nutriscore contribue à améliorer la santé des français ? Dans ce but, est ce que le nutriscore permet de manger équilibrer ?
+# 
 
 # ## Nos variables
+# 
 
 # Nous allons commencer par sélectionner les colonnes qu'il nous faut pour améliorer la santé des français.
 # 
@@ -1634,13 +1709,13 @@ pk.graph_barplot(data['nutrition_grade_fr'], "Répartition des produits selon le
 # 
 # Sélectionnons donc seulement les colonnes nécessaires à notre étude. Nous sélectionnons tous les aliments même ceux qui ne sont pas vendu en France. En effet, ils peuvent être vendus prochainement et être interessant pour notre étude.
 
-# In[ ]:
+# In[166]:
 
 
 data.columns
 
 
-# In[ ]:
+# In[167]:
 
 
 data_study = data[["code", "product_name",  
@@ -1653,6 +1728,16 @@ data_study = data[["code", "product_name",
        'reg_protein']]
 
 
+# In[168]:
+
+
+data_study=data_study.loc[(pd.isna(data.energy_100g)==False) & (pd.isna(data.carbohydrates_100g)==False) & (pd.isna(data.proteins_100g)==False) & (pd.isna(data.fat_100g)==False)
+       & (pd.isna(data["fiber_100g"])==False)& (pd.isna(data["additives_n"])==False)
+& (pd.isna(data["nutrition_score_fr_100g"])==False)
+                 & (pd.isna(data["nutrition_grade_fr"])==False)
+                 & (pd.isna(data["additives_n"])==False)]
+
+
 # ## Quels sont ses caractéristiques ?
 # 
 # #### Techniquement, voici les éléments qui agit sur le nutriscore :
@@ -1660,14 +1745,15 @@ data_study = data[["code", "product_name",
 # Points négatifs : l'énergie, les graisses saturées, les sucres, et le sel (des niveaux élevés sont considérés comme mauvais pour la santé)
 # 
 # Points positifs : la proportion de fruits, de légumes, de noix, d'huiles d'olive, de colza et de noix, de fibres et de protéines (les niveaux élevés sont considérés comme bons pour la santé).
+# 
 
-# ## Est - ce que si nous mangeons que des aliments avec un nutriscore A, serons - nous en bonne santé ?
+# ## 1) Est - ce que si nous mangeons que des aliments avec un nutriscore A, serons - nous en bonne santé ?
 
 # ### Comparons les informations  des différentes notes.
 
 # Excluons les données non renseignées du Nutriscore.
 
-# In[ ]:
+# In[1689]:
 
 
 dataN = data_study.loc[data["nutrition_grade_fr"]!="AUTRES"].sort_values(by=["nutrition_grade_fr"])
@@ -1675,13 +1761,13 @@ dataN = data_study.loc[data["nutrition_grade_fr"]!="AUTRES"].sort_values(by=["nu
 
 # ### Analyse bivariée : Etudions le lien entre la variable nutrition_grade_fr et les autres variables.
 
-# In[ ]:
+# In[1690]:
 
 
 dataN.describe()
 
 
-# In[ ]:
+# In[1691]:
 
 
 def percentile(n):
@@ -1692,7 +1778,7 @@ def percentile(n):
     return percentile_
 
 
-# In[ ]:
+# In[1692]:
 
 
 for col in data_study.select_dtypes(include=['float64']).columns:
@@ -1700,7 +1786,7 @@ for col in data_study.select_dtypes(include=['float64']).columns:
     print(dataN.groupby("nutrition_grade_fr")[col].agg([np.median,np.min, np.max, percentile(25), percentile(75)]))
 
 
-# In[ ]:
+# In[1693]:
 
 
 for col in data_study.select_dtypes(include=['float64']).columns:
@@ -1715,7 +1801,6 @@ for col in data_study.select_dtypes(include=['float64']).columns:
 # Comment pouvons - nous décrire les aliments avec une note A ?
 # - riches en fibres et en proteines
 # - peu de sel, de sucre et de matières grasses (y compris en graisses saturés)
-# - contiennent des fruits, végétaux ou des arachides
 # - faible en additifs
 # - apport en energie proche de la moyenne
 # 
@@ -1724,24 +1809,28 @@ for col in data_study.select_dtypes(include=['float64']).columns:
 # - pauvres en fibres, proteines, sel
 # - une energie qui varie beaucoup dans les extrêmes.
 
-# In[ ]:
+# In[1694]:
 
 
 dataN.columns
 
 
-# In[ ]:
+# In[2906]:
 
 
-sns.catplot(x = "nutrition_grade_fr", hue = "ingredients_from_palm_oil", data = dataN, kind = "count", color=(0.82, 0.28, 0.09))
+sns.catplot(x = "nutrition_grade_fr", hue = "ingredients_from_palm_oil", data = dataN, kind = "count", palette="rocket")
 
 
 # Les produits qui contiennent potentiellement de l'huile de palme ont les meilleurs notes.
 
-# ### Confirmons nos résultats précédents en vérifiant le lien entre nos variables quantitatives et le grade du nutriscore
+# Confirmons nos résultats précédents en vérifiant le lien entre nos variables quantitatives et le grade du nutriscore
+
+# ## 2) Statistiques inférentielles : ANOVA et Test de Krusdall-Wallis
+
+# ## a) Essayons de modéliser nos données avec une ANOVA
 
 # Pour cela, nous pourrions modéliser nos données en réalisant une ANOVA.
-# Mais cela suppose 3 choses : 
+# Mais nous devons vérifier 3 hypothèses : 
 # - l'indépendance entre chaque groupe
 # - l'égalité des variances
 # - la normalité des résidus (cela permet de ne pas affirmer qu'il existe une différence de moyenne entre les groupes qui serait causée par le hasard).
@@ -1752,7 +1841,7 @@ sns.catplot(x = "nutrition_grade_fr", hue = "ingredients_from_palm_oil", data = 
 
 # ### L'égalité des variances
 
-# Réalisons un test de bartlette afin de confirmer ce que nous avons vu lors de l'analyse bivariée.
+# Réalisons un test de bartlet afin de confirmer ce que nous avons vu lors de l'analyse bivariée.
 # 
 # H0 : Les variances de chaque groupe sont égales si p-value > 5%
 # 
@@ -1760,7 +1849,7 @@ sns.catplot(x = "nutrition_grade_fr", hue = "ingredients_from_palm_oil", data = 
 
 # Définissons nos groupes
 
-# In[ ]:
+# In[1696]:
 
 
 data_a=dataN.loc[data["nutrition_grade_fr"]=="A"]
@@ -1772,7 +1861,7 @@ data_e=dataN.loc[data["nutrition_grade_fr"]=="E"]
 
 # Effectuons le test pour chaque variable quantitative
 
-# In[ ]:
+# In[1697]:
 
 
 for col in dataN.select_dtypes(include=['float64']).columns:
@@ -1782,8 +1871,9 @@ for col in dataN.select_dtypes(include=['float64']).columns:
 # Nous rejetons h0 pour toutes nos variables. Les variances ne sont pas égales.
 
 # La deuxième condition pour effectuer une ANOVA n'est pas validée.
+# 
 
-# In[ ]:
+# In[1698]:
 
 
 import statsmodels.api as sm
@@ -1801,7 +1891,7 @@ anova
 # 
 # #### Les résidus doivent suivre une loi normale
 
-# In[ ]:
+# In[1699]:
 
 
 import numpy as np
@@ -1815,7 +1905,7 @@ scipy.stats.normaltest(model.resid)
 # ~H0 : Les résidus suivent une loi normale si p-value > 5%~
 # H1 : Les résidus ne suivent pas une loi normale si p-value < 5%
 
-# In[ ]:
+# In[1700]:
 
 
 import numpy as np
@@ -1830,17 +1920,17 @@ sm.qqplot(model.resid, line='45')
 pylab.show()
 
 
-# ### Utilisons le test de Krusdall (utilise les rangs au lieu des moyennes)
+# ## b) Utilisons le test de Krusdall (utilise les rangs au lieu des moyennes)
 
-# H0 :  la médiane de la population de tous les groupes est égale
-# H1 :  la médiane de la population d'au moins un groupe n'est pas égale
+# - H0 :  la médiane de la population de tous les groupes est égale pvalue>0.05
+# - H1 :  la médiane de la population d'au moins un groupe n'est pas égale p-value<0.05
 
 # Test Krusdall(utilise mediane et quantile)
 
-# In[ ]:
+# In[1701]:
 
 
-for col in data.select_dtypes(include=['float64']).columns:
+for col in dataN.select_dtypes(include=['float64']).columns:
     print("colonne "+col+": "+ str(scipy.stats.kruskal(*[group[col] for name, group in dataN.groupby("nutrition_grade_fr")])))
 
 
@@ -1879,108 +1969,159 @@ for col in data.select_dtypes(include=['float64']).columns:
 # Donc si nous mangeons que des produits A, cela ne nous permet pas de manger équilibrer et ne permet pas d'améliorer la santé.
 # Comment pouvons - nous améliorer la santé des français?
 
-# # Objectif une meilleure santé pour tous : Application Smart Food
+# # III - Objectif une meilleure santé pour tous : Application Smart Food
 
 # Un classement des aliments et le calcul de leur combinaison permettront d'améliorer la santé des français et les guider vers une alimentation équilibrée sans se priver.
 
-# ## Classement des aliments
+# ## 1) Classement des aliments
 
 # Etudions de plus près nos aliments et regardons qu'elles sont les variables qui permettent d'expliquer au mieux cette population.
 # 
 # 
 # Pour commencer, il nous faut exclure les données manquantes et étudier les variables quantitatives qui sont corrélées.
 
-# In[ ]:
+# In[1702]:
 
 
 data.columns
 
 
+# In[2911]:
+
+
+data_quanti=data[['additives_n',
+       'ingredients_from_palm_oil_n',
+       'ingredients_that_may_be_from_palm_oil_n','energy_100g', 'fat_100g', 'saturated_fat_100g', 'carbohydrates_100g',
+       'sugars_100g', 'fiber_100g', 'proteins_100g', 'salt_100g',
+       'sodium_100g', 
+       'ingredients_from_palm_oil', ]]
+
+
+# ## a) Corrélations entre les variables quantitatives
+
 # Regardons les variables corrélées.
 
-# In[ ]:
+# In[2917]:
 
 
 sns.set(rc={'figure.figsize':(10,4)})
 
-data_corr = data.corr()
+data_corr = data_quanti.corr()
 
+display(data_corr)
 ax = sns.heatmap(data_corr, xticklabels = data_corr.columns , 
-                 yticklabels = data_corr.columns, cmap = 'coolwarm')
+                 yticklabels = data_corr.columns, cmap = 'rocket_r')
+plt.title("Matrice de corrélation des variables quantitatives")
+
+plt.xlabel("Variables")
+
+plt.ylabel("Variables")
 
 
-# In[ ]:
+# Cette matrice nous permet d'identifier les variables corrélées : 
+# - fat_100g et saturated_fat_100g
+# - carbohydrates_100g et sugars_100g
+# - energy_100g et fat_100g
+# - salt_100g et sodium_100g
+# - additives_n et ingredients_that_may_be_from_palm_oil_n
+
+# ## b) Analyse en composante principale
+
+# Il est necessaire de conserver une des variables corrélées car elles n'apportent aucune information supplémentaires.
+# Nous excluons les variables suivantes : 
+# - saturated_fat_100g
+# - sugars_100g
+# - energy_100g
+# - sodium_100g
+# - ingredients_that_may_be_from_palm_oil_n
+
+# In[2974]:
 
 
-data_acp=data.loc[(pd.isna(data.energy_100g)==False) & (pd.isna(data.carbohydrates_100g)==False) & (pd.isna(data.proteins_100g)==False) & (pd.isna(data.fat_100g)==False)
-       & (pd.isna(data["fiber_100g"])==False)
-& (pd.isna(data["nutrition_score_fr_100g"])==False)
-                 & (pd.isna(data["nutrition_grade_fr"])==False)
-                 & (pd.isna(data["additives_n"])==False)]
+data_study.columns
 
 
-# Nous excluons la variable sugars_100 car elle est corrélée avec carbohydrates_100g (glucides).
-# Et nous excluons la variable satured_fat qui est corrélée avec fat_100g.
-# Nous excluons aussi la variable energy_100g qui est corrélé avec fat_100g.
-
-# In[ ]:
+# In[2968]:
 
 
-data.columns
 
-
-# In[ ]:
-
-
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, scale
 # suppression des colonnes non numériques
-WGI_num0 = data_acp.drop(columns =data.select_dtypes(include=['object', 'string']).columns)
+WGI_num0 = data_study.drop(columns =data_study.select_dtypes(include=['object', 'string']).columns)
+WGI_num0.columns
 
 
-# In[ ]:
+# In[2969]:
+
+
+WGI_num0 = WGI_num0.drop(columns =["reg_additives", "reg_energy", "reg_fat", "reg_carbohydrates", "reg_fiber",
+                                  "reg_protein", "nutrition_score_fr_100g",
+                                  "energy_100g", "saturated_fat_100g", "sugars_100g", "ingredients_that_may_be_from_palm_oil_n",
+                                  "ingredients_from_palm_oil_n"])
+
+
+# In[2970]:
 
 
 WGI_num0.columns
 
 
-# In[ ]:
+# In[2971]:
 
 
-WGI_num0 = WGI_num0.drop(columns =["reg_additives", "reg_energy", "reg_fat", "reg_saturated_fat", "reg_carbohydrates", "reg_fiber",
-                                  "reg_protein", "year", "month", "nutrition_score_fr_100g","nutrition-score-uk_100g",
-                                  "energy_100g", "saturated_fat_100g", "sodium_100g", "sugars_100g"])
+
+WGI_num0=WGI_num0.loc[(pd.isna(WGI_num0.carbohydrates_100g)==False) & (pd.isna(WGI_num0.proteins_100g)==False)
+                      & (pd.isna(WGI_num0.fat_100g)==False) & (pd.isna(WGI_num0["fiber_100g"])==False) 
+                      & (pd.isna(WGI_num0["salt_100g"])==False)
+                 & (pd.isna(WGI_num0["additives_n"])==False)]
 
 
-# In[ ]:
+# In[2972]:
 
 
 WGI_num0.describe(include="all")
 
 
-# In[ ]:
+# In[2973]:
 
 
-pca = PCA()
-WGI_num = pca.fit_transform(scale(WGI_num0))
-
-pca.fit(WGI_num)
+data_study.columns
 
 
-# In[ ]:
+# In[2954]:
+
+
+
+#instanciation
+sc = StandardScaler()
+#transformation – centrage-réduction
+Z = sc.fit_transform(WGI_num0)
+print(Z)
+
+
+# In[2955]:
+
+
+pca = PCA(n_components=6)
+
+#calculs
+coord = pca.fit_transform(Z)
+pca.fit_transform(Z)
+
+
+# In[2956]:
 
 
 print(pca.explained_variance_)
 print(pca.explained_variance_ratio_)
 
 
-# In[ ]:
+# In[2957]:
 
 
 eig = pd.DataFrame(
     {
-        "Dimension" : ["Dim" + str(x + 1) for x in range(8)], 
-        "Variance expliquée" : pca.explained_variance_,
+        "Dimension" : ["Dim" + str(x + 1) for x in range(6)], 
+        "Valeurs propres" : (n-1) / n * pca.explained_variance_,
         "% variance expliquée" : np.round(pca.explained_variance_ratio_ * 100),
         "% cum. var. expliquée" : np.round(np.cumsum(pca.explained_variance_ratio_) * 100)
     }
@@ -1988,22 +2129,35 @@ eig = pd.DataFrame(
 eig
 
 
-# In[ ]:
+# In[3018]:
 
 
-eig.plot.bar(x = "Dimension", y = "% variance expliquée") # permet un diagramme en barres
-plt.text(5, 18, "14%") # ajout de texte
-plt.axhline(y = 14, linewidth = .5, color = "dimgray", linestyle = "--") # ligne 17 = 100 / 6 (nb dimensions)
+eig.plot.bar(x = "Dimension", y = "% cum. var. expliquée", color="g") # permet un diagramme en barres
+plt.text(5, 18, "17%") # ajout de texte
+plt.axhline(y = 17, linewidth = .5, color = "red", linestyle = "--") # ligne 17 = 100 / 6 (nb dimensions)
 plt.show()
 
 
-# In[ ]:
+# In[3019]:
 
 
-WGI_pca = pca.transform(WGI_num)
+pca.explained_variance_ratio_
 
 
-# In[ ]:
+# In[3020]:
+
+
+#cumul de variance expliquée
+plt.plot(np.arange(0,p),np.cumsum(pca.explained_variance_ratio_))
+plt.title("Explained variance vs. # of factors")
+plt.ylabel("Cumsum explained variance ratio")
+plt.xlabel("Factor number")
+plt.show()
+
+
+# On conserve 3 dimensions.
+
+# In[3021]:
 
 
 # Transformation en DataFrame pandas
@@ -2011,155 +2165,327 @@ WGI_pca_df = pd.DataFrame({
     "Dim1" : WGI_pca[:,0], 
     "Dim2" : WGI_pca[:,1],
     "Dim3" : WGI_pca[:,2],
-    "Dim4" : WGI_pca[:,3],
-    "Dim5" : WGI_pca[:,4],
-    "Dim6" : WGI_pca[:,5],
-    "product": data_acp["product_name"],
-    "nutrition_grade_fr" : data_acp["nutrition_grade_fr"]
+    "product": data_study["product_name"],
+    "nutrition_grade_fr" : data_study["nutrition_grade_fr"]
 })
 
 # Résultat (premières lignes)
 WGI_pca_df.head()
 
 
-# In[ ]:
+# In[2962]:
 
 
 WGI_pca_df.plot.scatter("Dim1", "Dim2") # nuage de points
-plt.xlabel("Dimension 1 (35%)") # modification du nom de l'axe X
-plt.ylabel("Dimension 2 (30%)") # idem pour axe Y
-plt.suptitle("Premier plan factoriel (65%)") # titre général
+plt.xlabel("Dimension 1 (24%)") # modification du nom de l'axe X
+plt.ylabel("Dimension 2 (21%)") # idem pour axe Y
+plt.suptitle("Premier plan factoriel (45%)") # titre général
 plt.show()
 
 
-# In[ ]:
-
-
-WGI_num.shape
-
-
-# In[ ]:
+# In[2963]:
 
 
 WGI_num
 
 
+# In[2964]:
+
+
+n_components
+
+
+# In[2965]:
+
+
+
+# Append the principle components for each entry to the dataframe
+for i in range(0, 3):
+    data_study['PC' + str(i + 1)] = coord[:, i]
+
+display(WGI_num0.head())
+
+# Show the points in terms of the first two PCs
+g = sns.lmplot('PC1',
+               'PC2',
+               hue='nutrition_grade_fr',data=data_study,
+               fit_reg=False,
+               scatter=True,
+               size=7)
+
+plt.show()
+
+
+# In[2966]:
+
+
+
+# Plot a variable factor map for the first two dimensions.
+(fig, ax) = plt.subplots(figsize=(8, 8))
+for i in range(0, pca.components_.shape[1]):
+    ax.arrow(0,
+             0,  # Start the arrow at the origin
+             pca.components_[0, i],  #0 for PC1
+             pca.components_[1, i],  #1 for PC2
+             head_width=0.1,
+             head_length=0.1)
+
+    plt.text(pca.components_[0, i] + 0.05,
+             pca.components_[1, i] + 0.05,
+             WGI_num0.columns.values[i])
+
+
+an = np.linspace(0, 2 * np.pi, 100)
+plt.plot(np.cos(an), np.sin(an))  # Add a unit circle for scale
+plt.axis('equal')
+ax.set_title('Variable factor map')
+plt.show()
+
+
+# Le premier plan factoriel est expliqué par les variables proteins et fat positivement
+# Et le second plan factoriel est expliqué par les variables fibres et carbohydrate. Cependant, ces variables sont assez éloignées du bord du cercle.
+# 
+# Nous devons calculer le cosinus au carré pour vérifier les coefficients de corrélation avec nos axes.
+# 
+# Combinons nos deux graphiques précédent.
+
+# In[2929]:
+
+
+cos2var = corvar**2
+print(pd.DataFrame({'id':WGI_num0.columns,'COS2_1':cos2var[:,0],'COS2_2':cos2var[:,1],'COS2_3':cos2var[:,2]}))
+
+
 # In[ ]:
 
 
-n = WGI_num.shape[0] # nb individus
-p = WGI_num.shape[1] # nb variables
-eigval = (n-1) / n * pca.explained_variance_ # valeurs propres
-sqrt_eigval = np.sqrt(eigval) # racine carrée des valeurs propres
-corvar = np.zeros((p,p)) # matrice vide pour avoir les coordonnées
+#cosinus carré des variables
+cos2var = corvar**2
+print(pandas.DataFrame({'id':WGI_num0.columns,'COS2_1':cos2var[:,0],'COS2_2':cos2var[:,1],'COS2_3':cos2var[:,1]}))
+
+
+# In[2931]:
+
+
+#contributions
+ctrvar = cos2var
 for k in range(p):
-    corvar[:,k] = pca.components_[k,:] * sqrt_eigval[k]
-# on modifie pour avoir un dataframe
-coordvar = pd.DataFrame({'id': WGI_num0.columns, 'COR_1': corvar[:,0], 'COR_2': corvar[:,1], 'COR_3': corvar[:,2]
-                        , 'COR_4': corvar[:,3], 'COR_5': corvar[:,4], 'COR_6': corvar[:,5]})
-coordvar
+ ctrvar[:,k] = ctrvar[:,k]/eigval[k]
+#on n'affiche que pour les trois premiers axes
+print(pd.DataFrame({'id':WGI_num0.columns,'CTR_1':ctrvar[:,0],'CTR_2':ctrvar[:,1],'CTR_3':ctrvar[:,2]}))
 
 
-# In[ ]:
+# In[1897]:
 
 
+####mettre en 3d
 from yellowbrick.datasets import load_concrete
 from yellowbrick.features import PCA
 from yellowbrick.style import set_palette
 
 # Load the concrete dataset
+plt.figure()
 visualizer = PCA(scale=True, proj_features=True)
 visualizer.fit_transform(WGI_num0)
-visualizer.show()
+visualizer.poof()
 
 
-# In[ ]:
+# Nous observons 2 groupes extrêmes :un qui est caractérisé par un fort nombre de carbohydrates et de fibres et le deuxième groupe qui est caractérisé par un fort nombre de protéines et de matières grasses.
+# 
+# Des variables semblent être liées : 
+# - carbohydrates et fibres
+# - fat et protéine
+# 
+# Réalisons une classification hiérarchique afin de classer nos aliments.
+# 
+
+# ## c ) Classification ascendante hiérarchique
+
+# Nous allons extraire un échantillon de notre base de données afin de réduire la population. Les calculs sur une population importante pose problème selon la puissance de l'ordinateur.
+
+# In[2655]:
 
 
-ax = plt.figure(figsize=(16,10)).gca(projection='3d')
-ax.scatter(
-    xs=WGI_pca_df["Dim1"], 
-    ys=WGI_pca_df["Dim2"], 
-    zs=WGI_pca_df["Dim3"],
-    cmap='tab10'
-)
-ax.set_xlabel('Dim 1 (35%)')
-ax.set_ylabel('Dim 2 (30%)')
-ax.set_zlabel('Dim 3 (21%)')
-plt.show()
+data_study["nutrition_grade_fr"].value_counts()
 
 
-# In[ ]:
+# In[2656]:
 
 
-WGI_num0
+test_a=data_study.loc[data_study["nutrition_grade_fr"]=="A"].sample(1100)
+test_b=data_study.loc[data_study["nutrition_grade_fr"]=="B"].sample(1100)
+test_c=data_study.loc[data_study["nutrition_grade_fr"]=="C"].sample(1100)
+test_d=data_study.loc[data_study["nutrition_grade_fr"]=="D"].sample(1100)
+test_e=data_study.loc[data_study["nutrition_grade_fr"]=="E"].sample(1047)
 
 
-# In[ ]:
-
-
-test_a=data_acp.loc[data_acp["nutrition_grade_fr"]=="A"].sample(1000)
-test_b=data_acp.loc[data_acp["nutrition_grade_fr"]=="B"].sample(1000)
-test_c=data_acp.loc[data_acp["nutrition_grade_fr"]=="C"].sample(1000)
-test_d=data_acp.loc[data_acp["nutrition_grade_fr"]=="D"].sample(1000)
-test_e=data_acp.loc[data_acp["nutrition_grade_fr"]=="E"].sample(1000)
-
-
-# In[ ]:
+# In[2657]:
 
 
 frames = [test_a, test_b, test_c, test_d, test_e]
 
 
-# In[ ]:
+# In[2658]:
 
 
 test = pd.concat(frames)
 
 
-# In[ ]:
+# In[2659]:
 
 
 test.shape
 
 
-# In[ ]:
+# In[2660]:
 
 
-test2=test.drop(columns =data_acp.select_dtypes(include=['object', 'string']).columns)
+test2=test.drop(columns =data_study.select_dtypes(include=['object', 'string']).columns)
 
 
-# In[ ]:
+# In[2661]:
 
 
-test2 = test2.drop(columns =["reg_additives", "reg_energy", "reg_fat", "reg_saturated_fat", "reg_carbohydrates", "reg_fiber",
-                                  "reg_protein", "year", "month", "nutrition_score_fr_100g","nutrition-score-uk_100g",
-                                  "energy_100g", "saturated_fat_100g", "sodium_100g", "sugars_100g"])
+test3 = test2.drop(columns =["reg_additives", "reg_energy", "reg_fat","reg_carbohydrates", "reg_fiber",
+                                  "reg_protein","ingredients_from_palm_oil_n",
+                             "ingredients_that_may_be_from_palm_oil_n",
+                                  "energy_100g", "saturated_fat_100g",  "sugars_100g"])
 
 
-# In[ ]:
+# In[2662]:
+
+
+test2 = test2.drop(columns =["reg_additives", "reg_energy", "reg_fat","reg_carbohydrates", "reg_fiber",
+                                  "reg_protein", "nutrition_score_fr_100g","ingredients_from_palm_oil_n",
+                             "ingredients_that_may_be_from_palm_oil_n",
+                                  "energy_100g", "saturated_fat_100g",  "sugars_100g"])
+
+
+# In[2919]:
+
+
+test3.columns
+
+
+# In[2663]:
 
 
 test2.describe(include="all")
 
 
-# In[ ]:
+# ### Réalisons un dendrogramme
+
+# In[2922]:
+
+
+# Centrage et Réduction
+std_scale = preprocessing.StandardScaler().fit(test2)
+X_scaled = std_scale.transform(test2)
+
+
+# In[2923]:
 
 
 #librairies pour la CAH
 from matplotlib import pyplot as plt
-from scipy.cluster.hierarchy import dendrogram, linkage
+from scipy.cluster.hierarchy import dendrogram, linkage, fcluster
+
 #générer la matrice des liens
-Z = linkage(test2,method='ward',metric='euclidean')
+Z = linkage(X_scaled,method='ward',metric='euclidean')
 #affichage du dendrogramme
 plt.title("CAH")
 dendrogram(Z,labels=test2.index,color_threshold=0)
 plt.show()
 
 
-# Noous décidons de couper  groupes.
+# Nous pourrions faire 5 groupes. Réalisons ce découpage en affichant le nutriscore.
+
+# In[1368]:
+
+
+#matérialisation des 5 classes (hauteur t = 350)
+plt.title('Hierarchical Clustering Dendrogram (truncated)')
+plt.xlabel('sample index or (cluster size)')
+plt.ylabel('distance')
+dendrogram(Z,labels=test.index,orientation='left',color_threshold=350,
+           truncate_mode = 'lastp' ,   # afficher uniquement les p derniers clusters fusionnés 
+    p = 12 ,   # afficher uniquement les p derniers clusters fusionnés 
+   
+    leaf_font_size = 12. , 
+    show_contracted = True
+          )
+plt.show()
+
+
+# In[1437]:
+
+
+#découpage à la hauteur t = 350 ==> identifiants de 5 groupes obtenus
+groupes_cah = fcluster(Z,t=350,criterion='distance')
+print(groupes_cah)
+#index triés des groupes
+idg = np.argsort(groupes_cah)
+#affichage des observatbbions et leurs groupes
+info_groupe=pd.DataFrame(test.index[idg],groupes_cah[idg])
+
+
+# In[1439]:
+
+
+WGI_pca_k2 = test.assign(classe = info_groupe.index)
+
+
+# In[1441]:
+
+
+t = pd.crosstab(WGI_pca_k2.nutrition_grade_fr, WGI_pca_k2.classe, normalize = "columns")
+t = t.assign(nutrition_grade_fr = t.index)
+tm = pd.melt(t, id_vars = "nutrition_grade_fr")
+tm = tm.assign(value = 100 * tm.value)
+
+sns.catplot("nutrition_grade_fr", y = "value", col = "classe", data = tm, kind = "bar")
+
+
+# ## d) Essayons d'utiliser KMeans
+
+# In[769]:
+
+
+from sklearn.cluster import KMeans
+from sklearn.datasets import make_blobs
+
+from yellowbrick.cluster import KElbowVisualizer
+
+X = WGI_num0
+# Instantiate the clustering model and visualizer
+model = KMeans()
+visualizer = KElbowVisualizer(
+    model, k=(4,12), metric='calinski_harabasz', timings=False, locate_elbow=False
+)
+
+visualizer.fit(X)        # Fit the data to the visualizer
+visualizer.show()        # Finalize and render the figure
+
 
 # In[ ]:
+
+
+from yellowbrick.cluster import KElbowVisualizer
+
+# Generate synthetic dataset with 8 random clusters
+X = WGI_num0
+
+# Instantiate the clustering model and visualizer
+model = KMeans()
+visualizer = KElbowVisualizer(model, k=(4,11))
+
+visualizer.fit(X)        # Fit the data to the visualizer
+visualizer.show()        # Finalize and render the figure
+
+
+# Nous essayerons 5 groupes.
+
+# In[203]:
 
 
 from sklearn.cluster import KMeans
@@ -2168,38 +2494,38 @@ kmeans2 = KMeans(n_clusters = 5)
 kmeans2.fit(scale(WGI_num0))
 
 
-# In[ ]:
+# In[204]:
 
 
 kmeans2.labels_
 
 
-# In[ ]:
+# In[205]:
 
 
 pd.Series(kmeans2.labels_).value_counts()
 
 
-# In[ ]:
+# In[206]:
 
 
 kmeans2.cluster_centers_
 
 
-# In[ ]:
+# In[207]:
 
 
 WGI_k2 = WGI_num0.assign(classe = kmeans2.labels_)
 WGI_k2.groupby("classe").mean()
 
 
-# In[ ]:
+# In[208]:
 
 
 WGI_k2
 
 
-# In[ ]:
+# In[209]:
 
 
 WGI_pca_k2 = WGI_pca_df.assign(classe = kmeans2.labels_)
@@ -2207,13 +2533,13 @@ WGI_pca_k2.plot.scatter(x = "Dim1", y = "Dim2", c = "classe", cmap = "Accent")
 plt.show()
 
 
-# In[ ]:
+# In[210]:
 
 
 WGI_pca_k2.shape
 
 
-# In[ ]:
+# In[211]:
 
 
 ax = plt.figure(figsize=(16,10)).gca(projection='3d')
@@ -2231,7 +2557,7 @@ ax.set_zlabel('Dim 3 (21%)')
 plt.show()
 
 
-# In[ ]:
+# In[212]:
 
 
 inertia = []
@@ -2247,7 +2573,7 @@ plt.show()
 
 # coude plus marqué au niveau du 4
 
-# In[ ]:
+# In[213]:
 
 
 WGI_pca_k2
@@ -2257,19 +2583,19 @@ WGI_pca_k2
 
 # Comparons les nouveaux groupes et le nutriscore.
 
-# In[ ]:
+# In[214]:
 
 
 pd.crosstab(WGI_pca_k2.classe, WGI_pca_k2.nutrition_grade_fr, normalize = True)
 
 
-# In[ ]:
+# In[215]:
 
 
 sns.heatmap(pd.crosstab(WGI_pca_k2.nutrition_grade_fr, WGI_pca_k2.classe, normalize = True))
 
 
-# In[ ]:
+# In[216]:
 
 
 t = pd.crosstab(WGI_pca_k2.nutrition_grade_fr, WGI_pca_k2.classe, normalize = "columns")
@@ -2284,365 +2610,351 @@ sns.catplot("nutrition_grade_fr", y = "value", col = "classe", data = tm, kind =
 # 
 # Les autres groupes sont homogènes. Ce découpage ne semble pas adapter et est assez aléatoire.
 
-# ## Utilisation des variables quantitatives contenant les notes
+# ## e) Testons un mix de Kmeans et CAH
+
+# Créons un nombre de groupe important avec kmeans
+
+# In[2224]:
+
+
+from sklearn.decomposition import PCA
+from sklearn.preprocessing import StandardScaler, MinMaxScaler, scale
+# suppression des co!lonnes non numériques
+WGI_num0 = data_study.drop(columns =data_study.select_dtypes(include=['object', 'string']).columns)
+WGI_num0 = WGI_num0.drop(columns =["reg_additives", "reg_energy", "reg_fat", "reg_carbohydrates", "reg_fiber",
+                                  "reg_protein", "nutrition_score_fr_100g",
+                                  "energy_100g", "saturated_fat_100g", "sugars_100g", "ingredients_that_may_be_from_palm_oil_n",
+                                  "ingredients_from_palm_oil_n"])
+WGI_num0=WGI_num0.loc[ (pd.isna(data.carbohydrates_100g)==False) & (pd.isna(data.proteins_100g)==False) 
+                       & (pd.isna(data.fat_100g)==False)
+       & (pd.isna(data["fiber_100g"])==False)
+                       & (pd.isna(data["salt_100g"])==False)
+& (pd.isna(data["nutrition_score_fr_100g"])==False)
+                 & (pd.isna(data["nutrition_grade_fr"])==False)
+                 & (pd.isna(data["additives_n"])==False)]
+
+
+# In[2225]:
+
+
+WGI_num0.columns
+
+
+# In[2226]:
+
+
+WGI_num0.shape
+
+
+# In[2723]:
+
+
+from sklearn.cluster import KMeans
+
+kmeans2 = KMeans(n_clusters = 50)
+kmeans2.fit(scale(WGI_num0))
+
+
+# In[2728]:
+
+
+labels=kmeans2.labels_
+
+
+# In[2729]:
+
+
+labels.shape
+
+
+# In[2730]:
+
+
+centroid=kmeans2.cluster_centers_
+
+
+# In[2731]:
+
+
+
+#perform the clustering
+Z = linkage(centroid,method='ward',metric='euclidean')
+
+
+# In[2735]:
+
+
+
+#affichage du dendrogramme
+plt.title("CAH")
+dendrogram(Z,color_threshold=11)
+plt.show()
+
+
+# Réalisons la CAH sur le centre des clusters
+
+# In[2736]:
+
+
+#découpage à la hauteur t = 400 ==> identifiants de 5 groupes obtenus
+groupes_cah = fcluster(Z,t=11,criterion='distance')
+print(groupes_cah)
+
+
+# In[2737]:
+
+
+#index triés des groupes
+idg = np.argsort(groupes_cah)
+#affichage des observatbbions et leurs groupes
+info_groupe=pd.DataFrame(centroid[idg],groupes_cah[idg], columns=['0','1','2','3','4','5'])
+
+
+# In[2738]:
+
+
+info_groupe
+
+
+# Faisons une jointure entre kmeans et cah
+
+# In[2739]:
+
+
+info_groupe
+
+
+# In[2740]:
+
+
+cluster_map = pd.DataFrame()
+cluster_map['data_index'] = WGI_num0.index
+cluster_map['cluster'] = kmeans2.labels_
+
+
+# In[2741]:
+
+
+max(cluster_map["cluster"])
+
+
+# In[2742]:
+
+
+centroid_map = pd.DataFrame(columns=["cluster", "0", "1", "2", "3", "4", "5"])
+for i in range(0,max(cluster_map["cluster"])+1):
+    centroid_map.loc[i] = i, kmeans2.cluster_centers_[i][0],kmeans2.cluster_centers_[i][1], kmeans2.cluster_centers_[i][2], kmeans2.cluster_centers_[i][3],kmeans2.cluster_centers_[i][4],kmeans2.cluster_centers_[i][5]
+    
+
+
+# In[2743]:
+
+
+centroid_map.shape
+
+
+# In[2744]:
+
+
+info_groupe["classe_cah"]=info_groupe.index
+
+
+# In[2745]:
+
+
+cluster_map
+
+
+# In[2746]:
+
+
+data_merge = pd.merge(centroid_map, info_groupe, how="left", on=["0", "1", "2","3","4","5"], indicator=True,  suffixes=('', '_del'))
+data_result = data_merge.loc[data_merge["_merge"] == "both"].drop("_merge", axis=1)
+
+
+# In[2747]:
+
+
+cah=data_result
+
+
+# In[2748]:
+
+
+cluster_map.describe()
+
+
+# In[2749]:
+
+
+data_merge = pd.merge(cluster_map, cah, how="left", on=["cluster"], indicator=True,  suffixes=('', '_del'))
+data_result = data_merge.loc[data_merge["_merge"] == "both"].drop("_merge", axis=1)
+
+
+
+# In[2750]:
+
+
+mix_kmeans_cah=data_result
+
+
+# In[2751]:
+
+
+mix_kmeans_cah
+
+
+# In[2752]:
+
+
+data_study
+
+
+# In[2753]:
+
+
+
+WGI_k2 = data_study.assign(classe = mix_kmeans_cah.classe_cah)
+WGI_k2.groupby("classe").mean()
+
+
+# In[2754]:
+
+
+t = pd.crosstab(WGI_k2.nutrition_grade_fr, WGI_k2.classe, normalize = "columns")
+t = t.assign(nutrition_grade_fr = t.index)
+tm = pd.melt(t, id_vars = "nutrition_grade_fr")
+tm = tm.assign(value = 100 * tm.value)
+
+sns.catplot("nutrition_grade_fr", y = "value", col = "classe", data = tm, kind = "bar")
+
+
+# ## f) CAH : Utilisation des variables quantitatives avec regroupement
 
 # Essayons de refaire les calculs avec nos variables "regroupement"
 
-# Nous pouvons créer un score total qui ajoutera un poids en fonction des nutriments positifs et négatifs établis par l'agence du nutriscore.
-# 
 # Pour rappel :
 # - Points négatifs : l'énergie, les graisses saturées, les sucres, et le sel (des niveaux élevés sont considérés comme mauvais pour la santé)
 # 
 # - Points positifs : la proportion de fruits, de légumes, de noix, d'huiles d'olive, de colza et de noix, de fibres et de protéines (les niveaux élevés sont considérés comme bons pour la santé).
 
-# In[ ]:
+# In[212]:
 
 
-data["score_total"] = data.reg_saturated_fat + data['sugars_100g']*data['salt_100g'] + data['reg_additives']*2 + data['reg_energy'] * data['reg_fat'] + data['reg_carbohydrates'] + data['reg_fiber']*4 + data['reg_protein']*4
-
-
-# In[ ]:
-
-
-pk.graph_hist(data["score_total"],[-28,-10,-5,0,2,4,6,8,10,15,20,24,50,80,100,150,200,250] ,"Distribution des produits en fonction de la variable score_total",(0.82, 0.28, 0.09),
-          -28,2500, 2, 0, 10000, "score_total", 'Fréquences',(11,7))
-
-
-# Réalisons un regroupement et appliquons des notes.
-
-# In[ ]:
-
-
-def reg_score_total(x):
-    if x<-10:
-        return -10
-    elif x>=-10 and x<-5:
-        return -5
-    elif x>=-5 and x<1:
-        return 0
-    elif x>=0 and x<5:
-        return 5
-    elif x>=5 and x<10:
-        return 10
-    elif x>=10 and x<15:
-        return 15
-    elif x>=15 and x<25:
-        return 20
-    elif x>=25 and x<50:
-        return 50
-    elif x>=50 and x<80:
-        return 80
-    elif x>=80 and x<200:
-        return 200
-    elif x>=200:
-        return 300
-data['reg_score_total']=data.apply(lambda row: reg_score_total(row.score_total), axis=1)
-
-
-# In[ ]:
-
-
-pk.graph_barplot(data['reg_score_total'], "Répartition des aliments en fonction du score total", 
-              (0.82, 0.28, 0.09),
-              0, 25, "Classe proteine", "Fréquence en %",0, 1,(11,7))
-
-
-# In[ ]:
-
-
-data_study.columns
-
-
-# In[ ]:
-
-
-data_study = data[["code", "product_name",  "score_total",
+data_study = data[["code", "product_name",  #"score_total",
             "ingredients_text","energy_100g", "carbohydrates_100g", "proteins_100g", "fat_100g",
             "saturated_fat_100g", "fiber_100g", "sugars_100g", "salt_100g",
-             "additives_n", 
+             "additives_n", "reg_salt",
             "ingredients_from_palm_oil_n", "ingredients_that_may_be_from_palm_oil_n", 
             "nutrition_grade_fr", "main_category", "nutrition_score_fr_100g", 'reg_additives',
-       'reg_energy', 'reg_fat', 'reg_carbohydrates', 'reg_fiber', "reg_score_total",
+       'reg_energy', 'reg_fat', 'reg_carbohydrates', 'reg_fiber', 
        'reg_protein']]
-data_study=data_study.loc[(pd.isna(data_study.reg_additives)==False) & (pd.isna(data_study.reg_energy)==False) 
+data_study=data_study.loc[(pd.isna(data_study.reg_additives)==False) 
                & (pd.isna(data_study.reg_carbohydrates)==False) & (pd.isna(data_study.reg_fat)==False) 
-               & (pd.isna(data_study.reg_fiber)==False)  & (pd.isna(data_study.score_total)==False)
+               & (pd.isna(data_study.reg_fiber)==False)
                             & (pd.isna(data_study.nutrition_score_fr_100g)==False)
-                          & (pd.isna(data_study.reg_protein)==False) ]
+                           & (pd.isna(data_study.nutrition_grade_fr)==False)
+                          & (pd.isna(data_study.reg_protein)==False)
+                          & (pd.isna(data_study.reg_salt)==False)]
 
 
-# In[ ]:
+# In[214]:
 
-
-from sklearn.decomposition import PCA
-from sklearn.preprocessing import StandardScaler, MinMaxScaler, scale
-# suppression des colonnes non numériques
-WGI_num0 = data_study.drop(columns = [ "main_category", "nutrition_grade_fr","energy_100g","reg_energy",
-                                      "carbohydrates_100g", "proteins_100g", "fat_100g", "fiber_100g",
-                                      "additives_n","nutrition_score_fr_100g",
-                                      "product_name","sugars_100g", "saturated_fat_100g","code",
-                                      "ingredients_text",  "ingredients_from_palm_oil_n", "ingredients_that_may_be_from_palm_oil_n"])
-
-WGI_num0.columns
-
-WGI_num0.describe()
-
-
-# In[ ]:
-
-
-pca = PCA()
-WGI_num = pca.fit_transform(scale(WGI_num0))
-
-pca.fit(WGI_num)
-
-
-# In[ ]:
-
-
-print(pca.explained_variance_)
-print(pca.explained_variance_ratio_)
-
-
-# In[ ]:
-
-
-eig = pd.DataFrame(
-    {
-        "Dimension" : ["Dim" + str(x + 1) for x in range(8)], 
-        "Variance expliquée" : pca.explained_variance_,
-        "% variance expliquée" : np.round(pca.explained_variance_ratio_ * 100),
-        "% cum. var. expliquée" : np.round(np.cumsum(pca.explained_variance_ratio_) * 100)
-    }
-)
-eig
-
-
-# In[ ]:
-
-
-
-eig.plot.bar(x = "Dimension", y = "% variance expliquée") # permet un diagramme en barres
-plt.text(5, 18, "14%") # ajout de texte
-plt.axhline(y = 14, linewidth = .5, color = "dimgray", linestyle = "--") # ligne 17 = 100 / 6 (nb dimensions)
-plt.show()
-
-
-# In[ ]:
-
-
-WGI_pca = pca.transform(WGI_num)
-
-# +
-# Transformation en DataFrame pandas
-WGI_pca_df = pd.DataFrame({
-    "Dim1" : WGI_pca[:,0], 
-    "Dim2" : WGI_pca[:,1],
-    "Dim3" : WGI_pca[:,2],
-    "Dim4" : WGI_pca[:,3],
-    "Dim5" : WGI_pca[:,4],
-    "product": data_study["product_name"],
-    "nutrition_grade_fr" : data_study["nutrition_grade_fr"]
-})
-# Résultat (premières lignes)
-WGI_pca_df.head()
-
-
-# In[ ]:
-
-
-WGI_pca_df.plot.scatter("Dim1", "Dim2", "Dim3") # nuage de points
-plt.xlabel("Dimension 1 (35%)") # modification du nom de l'axe X
-plt.ylabel("Dimension 2 (30%)") # idem pour axe Y
-plt.suptitle("Premier plan factoriel (65%)") # titre général
-plt.show()
-
-
-# In[ ]:
-
-
-WGI_num0
-
-
-# In[ ]:
-
-
-from yellowbrick.datasets import load_concrete
-from yellowbrick.features import PCA
-from yellowbrick.style import set_palette
-
-# Load the concrete dataset
-visualizer = PCA(scale=True, proj_features=True)
-visualizer.fit_transform(WGI_num0)
-visualizer.show()
-
-
-# In[ ]:
-
-
-
-WGI_num.shape
-
-WGI_num
-
-
-# In[ ]:
-
-
-# -
-
-
-n = WGI_num.shape[0] # nb individus
-p = WGI_num.shape[1] # nb variables
-eigval = (n-1) / n * pca.explained_variance_ # valeurs propres
-sqrt_eigval = np.sqrt(eigval) # racine carrée des valeurs propres
-corvar = np.zeros((p,p)) # matrice vide pour avoir les coordonnées
-for k in range(p):
-    corvar[:,k] = pca.components_[k,:] * sqrt_eigval[k]
-# on modifie pour avoir un dataframe
-coordvar = pd.DataFrame({'id': WGI_num0.columns, 'COR_1': corvar[:,0], 'COR_2': corvar[:,1], 'COR_3': corvar[:,2]
-                        })
-coordvar
-
-
-# In[ ]:
 
 
 WGI_num_t2 = data_study.drop(columns = ["nutrition_score_fr_100g", "energy_100g","main_category", 
                                       "product_name","sugars_100g", "saturated_fat_100g","code", 
-                                      "ingredients_text","reg_energy","reg_additives",
+                                      "ingredients_text","reg_energy","salt_100g",
                                      "carbohydrates_100g", "proteins_100g", "fat_100g",
-                                     "fiber_100g", "salt_100g", "additives_n", "ingredients_from_palm_oil_n", "ingredients_that_may_be_from_palm_oil_n"])
+                                     "fiber_100g",  "additives_n", "ingredients_from_palm_oil_n", "ingredients_that_may_be_from_palm_oil_n"])
 
 WGI_num_t2.columns
 
 
-# In[ ]:
+# In[215]:
 
 
 WGI_num_t2["nutrition_grade_fr"].value_counts()
 
 
-# In[ ]:
+# In[216]:
 
 
-test_a=WGI_num_t2.loc[WGI_num_t2["nutrition_grade_fr"]=="A"].sample(1000)
-test_b=WGI_num_t2.loc[WGI_num_t2["nutrition_grade_fr"]=="B"].sample(1000)
-test_c=WGI_num_t2.loc[WGI_num_t2["nutrition_grade_fr"]=="C"].sample(1000)
-test_d=WGI_num_t2.loc[WGI_num_t2["nutrition_grade_fr"]=="D"].sample(1000)
-test_e=WGI_num_t2.loc[WGI_num_t2["nutrition_grade_fr"]=="E"].sample(472)
+test_a=WGI_num_t2.loc[WGI_num_t2["nutrition_grade_fr"]=="A"].sample(2000)
+test_b=WGI_num_t2.loc[WGI_num_t2["nutrition_grade_fr"]=="B"].sample(2000)
+test_c=WGI_num_t2.loc[WGI_num_t2["nutrition_grade_fr"]=="C"].sample(2000)
+test_d=WGI_num_t2.loc[WGI_num_t2["nutrition_grade_fr"]=="D"].sample(2000)
+test_e=WGI_num_t2.loc[WGI_num_t2["nutrition_grade_fr"]=="E"].sample(1047)
 
 frames = [test_a, test_b, test_c, test_d, test_e]
 
 test = pd.concat(frames)
 
 
-# In[ ]:
+# In[217]:
 
 
-del test["nutrition_grade_fr"]
+test.columns
 
 
-# In[ ]:
+# In[218]:
+
+
+test2=test.copy()
+del test2["nutrition_grade_fr"]
+
+
+# In[220]:
+
 
 
 #librairies pour la CAH
 from matplotlib import pyplot as plt
 from scipy.cluster.hierarchy import dendrogram, linkage
 #générer la matrice des liens
-Z = linkage(test,method='ward',metric='euclidean')
+Z = linkage(test2,method='ward',metric='euclidean')
 #affichage du dendrogramme
 plt.title("CAH")
-dendrogram(Z,labels=test.index,color_threshold=0)
+dendrogram(Z,labels=test.index,color_threshold=60)
 plt.show()
 
 
-# In[ ]:
+# In[221]:
 
 
-WGI_num0.columns
-
-
-# In[ ]:
-
-
-WGI_num0.describe()
-
-
-# In[ ]:
-
-
-from sklearn.cluster import KMeans
-
-kmeans2 = KMeans(n_clusters = 5)
-kmeans2.fit(WGI_num0)
-
-
-# In[ ]:
-
-
-pd.Series(kmeans2.labels_).value_counts()
-
-
-# In[ ]:
-
-
-WGI_k2 = WGI_num0.assign(classe = kmeans2.labels_)
-WGI_k2.groupby("classe").mean()
-
-WGI_k2
-
-
-# In[ ]:
-
-
-
-WGI_pca_k2 = WGI_pca_df.assign(classe = kmeans2.labels_)
-WGI_pca_k2.plot.scatter(x = "Dim1", y = "Dim2", c = "classe", cmap = "Accent")
+#matérialisation des 5 classes (hauteur t = 350)
+plt.title('Hierarchical Clustering Dendrogram (truncated)')
+plt.xlabel('sample index or (cluster size)')
+plt.ylabel('distance')
+dendrogram(Z,labels=test2.index,orientation='left',color_threshold=60,
+           truncate_mode = 'lastp' ,   # afficher uniquement les p derniers clusters fusionnés 
+    p = 12 ,   # afficher uniquement les p derniers clusters fusionnés 
+   
+    leaf_font_size = 12. , 
+    show_contracted = True
+          )
 plt.show()
 
 
-# In[ ]:
+# In[222]:
 
 
-
-ax = plt.figure(figsize=(16,10)).gca(projection='3d')
-WGI_pca_k2 = WGI_pca_df.assign(classe = kmeans2.labels_)
-ax.scatter(
-    xs=WGI_pca_k2["Dim1"], 
-    ys=WGI_pca_k2["Dim2"], 
-    zs=WGI_pca_k2["Dim3"],
-    c=WGI_pca_k2["classe"],
-    cmap='tab10'
-)
-ax.set_xlabel('Dim 1 (35%)')
-ax.set_ylabel('Dim 2(30%)')
-ax.set_zlabel('Dim 3 (21%)')
-plt.show()
+#découpage à la hauteur t = 400 ==> identifiants de 5 groupes obtenus
+groupes_cah = fcluster(Z,t=60,criterion='distance')
+print(groupes_cah)
+#index triés des groupes
+idg = np.argsort(groupes_cah)
+#affichage des observatbbions et leurs groupes
+info_groupe=pd.DataFrame(test.index[idg],groupes_cah[idg])
 
 
-# In[ ]:
+# In[223]:
 
 
-
-inertia = []
-for k in range(1, 11):
-    kmeans = KMeans(n_clusters = k, init = "random", n_init = 20).fit(WGI_num0)
-    inertia = inertia + [kmeans.inertia_]
-inertia = pd.DataFrame({"k": range(1, 11), "inertia": inertia})
-inertia.plot.line(x = "k", y = "inertia")
-plt.scatter(2, inertia.query('k == 2')["inertia"], c = "red")
-plt.scatter(5, inertia.query('k == 5')["inertia"], c = "red")
-plt.show()
+WGI_pca_k2 = test.assign(classe = info_groupe.index)
 
 
-# In[ ]:
-
-
-sns.heatmap(pd.crosstab(WGI_pca_k2.nutrition_grade_fr, WGI_pca_k2.classe, normalize = True))
-
-
-# In[ ]:
+# In[224]:
 
 
 t = pd.crosstab(WGI_pca_k2.nutrition_grade_fr, WGI_pca_k2.classe, normalize = "columns")
@@ -2653,63 +2965,183 @@ tm = tm.assign(value = 100 * tm.value)
 sns.catplot("nutrition_grade_fr", y = "value", col = "classe", data = tm, kind = "bar")
 
 
-# In[ ]:
-
-
-tm
-
-
-# In[ ]:
-
-
-WGI_pca_k2
-
-
-# In[ ]:
-
-
-new_class = data_study.assign(classe = kmeans2.labels_)
-
-
-# In[ ]:
-
-
-new_class.describe()
-
-
 # Ces résultats sont assez proche du nutriscore. Il y a des poids à mettre en fonction des apports nutritionnels.
-# Il faut donc appliquer une règle métier.
+# Il faut donc appliquer une règle métier pour séparer les groupes qui sont proches A/B et DE.
 
-# In[ ]:
+# # IV - Combinaison des aliments
 
-
-
-
-
-# # Combinaison des aliments
-
+# Utilisons le nutriscore qui permettra de classer nos aliments. Nous devons modifier les étiquettes et créer des catégories d'aliment afin de pouvoir garantir une alimentation équilibrée.
+# 
+# Ensuite, nous devons comparer le menu quotidien avec le seuil de l’apport journalier.
+# 
 # Voici l'apport quotidien pour un adulte :
-# 
 # Glucides = 250g (carbohydrates)
-# 
 # lipides = 50 insaturé et 20 sature
-# 
 # Protéines = 45 g pour une personne de 55 kg 60 g pour une personne de 75 kg
-# 
 # Fibres = 25 à 30 g dont une moitié issue des céréales et l'autre issue des fruits et légumes
 # 
-# Mise à disposition d'une application Smart-Food.
+# Nous pourrions créer une application Mobile Smart-Food.
 # 
-# Mise au panier d'aliment et calcul de l'apport quotidien Vert/rouge.
 
-# In[ ]:
+# # Conclusion - Un Apport journalier équilibré
+
+# Le nutriscore peut permettre d’améliorer la santé des français. En effet, il permet de catégoriser les aliments selon l’influence des facteurs suivants : matières grasses, additifs, fibres, protéines, glucides, sels. 
+# Il faut aussi ajouter des poids métiers afin de noter les aliments positivement ou négativement selon ces facteurs.
+# 
+# Cependant, c’est la combinaison de ces aliments qui va permettre aux français de manger équilibrer et de recevoir un apport nutritionnel quotidien suffisant.
+# 
+# Ainsi, il est nécessaire de proposer une application – Smart-food et de modifier les « étiquettes » du nutriscore afin de catégoriser les aliments et que ce soit plus parlant pour la population.
+# 
+
+# # Pour aller plus loin : Knn classifier
+
+# Remplaçons les données manquantes du nutrition grade fr. Utilisons le Knn classifier qui permet de prédire les données selon les plus proche voisins.
+
+# Utilisons les variables regroupées que nous avons utilisé pour la CAH.
+
+# In[240]:
 
 
+data_knn = data[['reg_salt', 'nutrition_grade_fr', 'reg_additives', 'reg_fat',
+       'reg_carbohydrates', 'reg_fiber', 'reg_protein']]
 
 
-
-# In[ ]:
-
+# In[241]:
 
 
+data_knn = data_knn.loc[(pd.isna(data_knn["reg_salt"])==False) & (pd.isna(data_knn["reg_additives"])==False) 
+                        & (pd.isna(data_knn["reg_fat"])==False) & (pd.isna(data_knn["reg_carbohydrates"])==False) 
+                        & (pd.isna(data_knn["reg_fiber"])==False) & (pd.isna(data_knn["reg_protein"])==False)]
+
+
+# In[248]:
+
+
+data_knn_train = data_knn.loc[pd.isna(data_knn["nutrition_grade_fr"])==False]
+
+
+# In[249]:
+
+
+data_knn_train.shape
+
+
+# In[273]:
+
+
+#creating labelEncoder
+le = preprocessing.LabelEncoder()
+# Converting string labels into numbers.
+Nutgrade_encoded=le.fit_transform(data_knn_train["nutrition_grade_fr"])
+print(Nutgrade_encoded)
+
+
+# In[274]:
+
+
+features=list(zip(data_knn_train["reg_salt"], data_knn_train["reg_additives"], data_knn_train["reg_fat"]
+                 , data_knn_train["reg_carbohydrates"], data_knn_train["reg_fiber"], data_knn_train["reg_protein"]))
+
+
+# In[275]:
+
+
+# Import train_test_split function
+from sklearn.model_selection import train_test_split
+
+# Split dataset into training set and test set
+X_train, X_test, y_train, y_test = train_test_split(features, Nutgrade_encoded, test_size=0.3) # 70% training and 30% test
+
+
+# In[276]:
+
+
+#Import knearest neighbors Classifier model
+from sklearn.neighbors import KNeighborsClassifier
+
+#Create KNN Classifier
+knn = KNeighborsClassifier(n_neighbors=5)
+
+#Train the model using the training sets
+knn.fit(X_train, y_train)
+
+#Predict the response for test dataset
+y_pred = knn.predict(X_test)
+
+
+# In[277]:
+
+
+#Import scikit-learn metrics module for accuracy calculation
+from sklearn import metrics
+# Model Accuracy, how often is the classifier correct?
+print("Accuracy:",metrics.accuracy_score(y_test, y_pred))
+
+
+# Taux de classification à 64,6%
+
+# #### Appliquons ce modèle sur les données à prédire
+
+# In[250]:
+
+
+data_knn_test = data_knn.loc[pd.isna(data_knn["nutrition_grade_fr"])==True]
+
+
+# In[251]:
+
+
+data_knn_test.shape
+
+
+# In[252]:
+
+
+data_knn_test.columns
+
+
+# Commençons par encoder le nutrion grade fr
+
+# In[263]:
+
+
+features_test=list(zip(data_knn_test["reg_salt"], data_knn_test["reg_additives"], data_knn_test["reg_fat"]
+                 , data_knn_test["reg_carbohydrates"], data_knn_test["reg_fiber"], data_knn_test["reg_protein"]))
+
+
+# Construisons le modèle de classificateur KNN.
+
+# In[261]:
+
+
+from sklearn.neighbors import KNeighborsClassifier
+
+model = KNeighborsClassifier(n_neighbors=5)
+
+
+# In[262]:
+
+
+# Train the model using the training sets
+model.fit(features,Nutgrade_encoded)
+
+
+# In[265]:
+
+
+predicted= model.predict(features_test) # 0:Overcast, 2:Mild
+
+
+# In[268]:
+
+
+data_knn_test=data_knn_test.assign(nutrition_grade_fr=predicted)
+
+
+# In[278]:
+
+
+pk.graph_barplot(data_knn_test['nutrition_grade_fr'], "Répartition des aliments selon le nutrition grade prédit avec Knn classifier", 
+              (0.82, 0.28, 0.09),
+              0, 45, "nutrition_grade_fr", "Fréquence en %",0,1, (11,7))
 
