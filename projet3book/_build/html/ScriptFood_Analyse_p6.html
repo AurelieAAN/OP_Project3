@@ -51,7 +51,7 @@
     <script async="async" src="_static/sphinx-thebe.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="V - Combinaison des aliments" href="ScriptFood_Analyse_p5.html" />
+    <link rel="prev" title="IV - Objectif une meilleure santé pour tous : Application Smart Food" href="ScriptFood_Analyse_p4.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -91,7 +91,7 @@
         <ul class="nav bd-sidenav">
  <li class="toctree-l1">
   <a class="reference internal" href="intro.html">
-   Objectif : Améliorer la santé des français book
+   Introduction
   </a>
  </li>
 </ul>
@@ -108,17 +108,12 @@
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="ScriptFood_Analyse_p3.html">
-   III - Est-ce que le nutriscore contribue à améliorer la santé des français ? Dans ce but, est ce que le nutriscore permet de manger équilibrer ?
+   III - Est-ce que le nutriscore contribue à améliorer la santé des français ? Dans ce but, est - ce que le nutriscore permet de manger équilibrer ?
   </a>
  </li>
  <li class="toctree-l1">
   <a class="reference internal" href="ScriptFood_Analyse_p4.html">
    IV - Objectif une meilleure santé pour tous : Application Smart Food
-  </a>
- </li>
- <li class="toctree-l1">
-  <a class="reference internal" href="ScriptFood_Analyse_p5.html">
-   V - Combinaison des aliments
   </a>
  </li>
  <li class="toctree-l1 current active">
@@ -231,7 +226,7 @@
             <nav id="bd-toc-nav" aria-label="Page">
                 <ul class="visible nav section-nav flex-column">
  <li class="toc-h1 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#">
+  <a class="reference internal nav-link" href="#conclusion-un-apport-journalier-equilibre">
    Conclusion - Un Apport journalier équilibré
   </a>
  </li>
@@ -261,7 +256,7 @@
   <div class="tex2jax_ignore mathjax_ignore section" id="conclusion-un-apport-journalier-equilibre">
 <h1>Conclusion - Un Apport journalier équilibré<a class="headerlink" href="#conclusion-un-apport-journalier-equilibre" title="Permalink to this headline">¶</a></h1>
 <p>Le nutriscore peut permettre d’améliorer la santé des français. En effet, il permet de catégoriser les aliments selon l’influence des facteurs suivants : matières grasses, additifs, fibres, protéines, glucides, sels.
-Il faut aussi ajouter des poids métiers afin de noter les aliments positivement ou négativement selon ces facteurs.</p>
+De plus, il ajoute aussi des poids métiers afin de noter les aliments positivement ou négativement selon ces facteurs.</p>
 <p>Cependant, c’est la combinaison de ces aliments qui va permettre aux français de manger équilibrer et de recevoir un apport nutritionnel quotidien suffisant.</p>
 <p>Ainsi, il est nécessaire de proposer une application – Smart-food et de modifier les « étiquettes » du nutriscore afin de catégoriser les aliments et que ce soit plus parlant pour la population.</p>
 </div>
@@ -276,17 +271,180 @@ Il faut aussi ajouter des poids métiers afin de noter les aliments positivement
 </pre></div>
 </div>
 </div>
-<div class="cell_output docutils container">
-<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
-<span class="ne">NameError</span><span class="g g-Whitespace">                                 </span>Traceback (most recent call last)
-<span class="o">~</span>\<span class="n">AppData</span>\<span class="n">Local</span>\<span class="n">Temp</span><span class="o">/</span><span class="n">ipykernel_640</span><span class="o">/</span><span class="mf">2804329674.</span><span class="n">py</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
-<span class="ne">----&gt; </span><span class="mi">1</span> <span class="n">data_knn</span> <span class="o">=</span> <span class="n">data</span><span class="p">[[</span><span class="s1">&#39;reg_salt&#39;</span><span class="p">,</span> <span class="s1">&#39;nutrition_grade_fr&#39;</span><span class="p">,</span> <span class="s1">&#39;reg_additives&#39;</span><span class="p">,</span> <span class="s1">&#39;reg_fat&#39;</span><span class="p">,</span>
-<span class="g g-Whitespace">      </span><span class="mi">2</span>        <span class="s1">&#39;reg_carbohydrates&#39;</span><span class="p">,</span> <span class="s1">&#39;reg_fiber&#39;</span><span class="p">,</span> <span class="s1">&#39;reg_protein&#39;</span><span class="p">]]</span>
-
-<span class="ne">NameError</span>: name &#39;data&#39; is not defined
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>code</th>
+      <th>created_datetime</th>
+      <th>product_name</th>
+      <th>countries</th>
+      <th>countries_tags</th>
+      <th>countries_fr</th>
+      <th>ingredients_text</th>
+      <th>additives_n</th>
+      <th>ingredients_from_palm_oil_n</th>
+      <th>ingredients_that_may_be_from_palm_oil_n</th>
+      <th>...</th>
+      <th>reg_fat</th>
+      <th>reg_saturated_fat</th>
+      <th>reg_carbohydrates</th>
+      <th>reg_fiber</th>
+      <th>reg_protein</th>
+      <th>reg_salt</th>
+      <th>year</th>
+      <th>month</th>
+      <th>year_month</th>
+      <th>alpha3</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0000000069601</td>
+      <td>2017-03-09T10:35:35Z</td>
+      <td>FRESH ORGANIC CARROTS</td>
+      <td>US</td>
+      <td>UNITED STATES OF AMERICA</td>
+      <td>ÉTATS-UNIS</td>
+      <td>FRESH ORGANIC CARROTS</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>(-0.001, 2.25]</td>
+      <td>(-0.001, 1.27]</td>
+      <td>(8.33, 18.15]</td>
+      <td>(1.25, 3.85]</td>
+      <td>(-0.001, 2.26]</td>
+      <td>(-0.001, 0.775]</td>
+      <td>2017</td>
+      <td>3</td>
+      <td>2017/03</td>
+      <td>USA</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>3257980252050</td>
+      <td>2015-07-22T11:09:34Z</td>
+      <td>OEUFS BIO NATURE X6</td>
+      <td>FRANCE</td>
+      <td>FRANCE</td>
+      <td>FRANCE</td>
+      <td>_OEUFS_ BIOLOGIQUES DE CATÉGORIE 1.</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>(6.58, 12.58]</td>
+      <td>(1.27, 4.12]</td>
+      <td>(-0.001, 8.33]</td>
+      <td>(-0.001, 1.25]</td>
+      <td>(6.45, 13.43]</td>
+      <td>(-0.001, 0.775]</td>
+      <td>2015</td>
+      <td>7</td>
+      <td>2015/07</td>
+      <td>FRA</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0042272011308</td>
+      <td>2017-03-09T20:36:30Z</td>
+      <td>CHEESE TORTELLINI BOWLS</td>
+      <td>US</td>
+      <td>UNITED STATES OF AMERICA</td>
+      <td>ÉTATS-UNIS</td>
+      <td>TORTELLINI PASTA (FILTERED WATER, ORGANIC UNBL...</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>(2.25, 6.58]</td>
+      <td>(1.27, 4.12]</td>
+      <td>(18.15, 31.3]</td>
+      <td>(1.25, 3.85]</td>
+      <td>(6.45, 13.43]</td>
+      <td>(-0.001, 0.775]</td>
+      <td>2017</td>
+      <td>3</td>
+      <td>2017/03</td>
+      <td>USA</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0813568002542</td>
+      <td>2017-03-09T12:53:36Z</td>
+      <td>GREEN PEAS</td>
+      <td>US</td>
+      <td>UNITED STATES OF AMERICA</td>
+      <td>ÉTATS-UNIS</td>
+      <td>GREEN SPLIT PEAS (GLUTEN FREE).</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>0.0</td>
+      <td>...</td>
+      <td>(-0.001, 2.25]</td>
+      <td>(-0.001, 1.27]</td>
+      <td>(8.33, 18.15]</td>
+      <td>(3.85, 9.6]</td>
+      <td>(2.26, 6.45]</td>
+      <td>(-0.001, 0.775]</td>
+      <td>2017</td>
+      <td>3</td>
+      <td>2017/03</td>
+      <td>USA</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>3257980305848</td>
+      <td>2015-12-06T15:33:13Z</td>
+      <td>ŒUFS 5</td>
+      <td>FRANCE</td>
+      <td>FRANCE</td>
+      <td>FRANCE</td>
+      <td>AUTRES</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>NaN</td>
+      <td>...</td>
+      <td>NaN</td>
+      <td>(1.27, 4.12]</td>
+      <td>NaN</td>
+      <td>(-0.001, 1.25]</td>
+      <td>(6.45, 13.43]</td>
+      <td>(-0.001, 0.775]</td>
+      <td>2015</td>
+      <td>12</td>
+      <td>2015/12</td>
+      <td>FRA</td>
+    </tr>
+  </tbody>
+</table>
+<p>5 rows × 38 columns</p>
+</div></div></div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -296,6 +454,121 @@ Il faut aussi ajouter des poids métiers afin de noter les aliments positivement
 </pre></div>
 </div>
 </div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_knn</span><span class="o">=</span><span class="n">Quali_to_quanti</span><span class="p">(</span><span class="n">data_knn</span><span class="p">,</span><span class="s2">&quot;reg_salt&quot;</span><span class="p">)</span>
+<span class="n">data_knn</span><span class="o">=</span><span class="n">Quali_to_quanti</span><span class="p">(</span><span class="n">data_knn</span><span class="p">,</span><span class="s2">&quot;reg_additives&quot;</span><span class="p">)</span>
+<span class="n">data_knn</span><span class="o">=</span><span class="n">Quali_to_quanti</span><span class="p">(</span><span class="n">data_knn</span><span class="p">,</span><span class="s2">&quot;reg_fat&quot;</span><span class="p">)</span>
+<span class="n">data_knn</span><span class="o">=</span><span class="n">Quali_to_quanti</span><span class="p">(</span><span class="n">data_knn</span><span class="p">,</span><span class="s2">&quot;reg_carbohydrates&quot;</span><span class="p">)</span>
+<span class="n">data_knn</span><span class="o">=</span><span class="n">Quali_to_quanti</span><span class="p">(</span><span class="n">data_knn</span><span class="p">,</span><span class="s2">&quot;reg_fiber&quot;</span><span class="p">)</span>
+<span class="n">data_knn</span><span class="o">=</span><span class="n">Quali_to_quanti</span><span class="p">(</span><span class="n">data_knn</span><span class="p">,</span><span class="s2">&quot;reg_protein&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output traceback highlight-ipythontb notranslate"><div class="highlight"><pre><span></span><span class="gt">---------------------------------------------------------------------------</span>
+<span class="ne">NameError</span><span class="g g-Whitespace">                                 </span>Traceback (most recent call last)
+<span class="o">~</span>\<span class="n">AppData</span>\<span class="n">Local</span>\<span class="n">Temp</span><span class="o">/</span><span class="n">ipykernel_3628</span><span class="o">/</span><span class="mf">2390231846.</span><span class="n">py</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+<span class="ne">----&gt; </span><span class="mi">1</span> <span class="n">data_knn</span><span class="o">=</span><span class="n">Quali_to_quanti</span><span class="p">(</span><span class="n">data_knn</span><span class="p">,</span><span class="s2">&quot;reg_salt&quot;</span><span class="p">)</span>
+<span class="g g-Whitespace">      </span><span class="mi">2</span> <span class="n">data_knn</span><span class="o">=</span><span class="n">Quali_to_quanti</span><span class="p">(</span><span class="n">data_knn</span><span class="p">,</span><span class="s2">&quot;reg_additives&quot;</span><span class="p">)</span>
+<span class="g g-Whitespace">      </span><span class="mi">3</span> <span class="n">data_knn</span><span class="o">=</span><span class="n">Quali_to_quanti</span><span class="p">(</span><span class="n">data_knn</span><span class="p">,</span><span class="s2">&quot;reg_fat&quot;</span><span class="p">)</span>
+<span class="g g-Whitespace">      </span><span class="mi">4</span> <span class="n">data_knn</span><span class="o">=</span><span class="n">Quali_to_quanti</span><span class="p">(</span><span class="n">data_knn</span><span class="p">,</span><span class="s2">&quot;reg_carbohydrates&quot;</span><span class="p">)</span>
+<span class="g g-Whitespace">      </span><span class="mi">5</span> <span class="n">data_knn</span><span class="o">=</span><span class="n">Quali_to_quanti</span><span class="p">(</span><span class="n">data_knn</span><span class="p">,</span><span class="s2">&quot;reg_fiber&quot;</span><span class="p">)</span>
+
+<span class="ne">NameError</span>: name &#39;Quali_to_quanti&#39; is not defined
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_knn</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>reg_salt</th>
+      <th>nutrition_grade_fr</th>
+      <th>reg_additives</th>
+      <th>reg_fat</th>
+      <th>reg_carbohydrates</th>
+      <th>reg_fiber</th>
+      <th>reg_protein</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>1</td>
+      <td>A</td>
+      <td>1</td>
+      <td>1</td>
+      <td>2</td>
+      <td>2</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>1</td>
+      <td>A</td>
+      <td>1</td>
+      <td>3</td>
+      <td>1</td>
+      <td>1</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>1</td>
+      <td>A</td>
+      <td>1</td>
+      <td>2</td>
+      <td>3</td>
+      <td>2</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>1</td>
+      <td>A</td>
+      <td>1</td>
+      <td>1</td>
+      <td>2</td>
+      <td>3</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>1</td>
+      <td>A</td>
+      <td>1</td>
+      <td>1</td>
+      <td>2</td>
+      <td>3</td>
+      <td>2</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
@@ -327,7 +600,7 @@ Il faut aussi ajouter des poids métiers afin de noter les aliments positivement
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[0 1 4 ... 2 2 1]
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[0 0 0 ... 4 4 4]
 </pre></div>
 </div>
 </div>
@@ -342,10 +615,7 @@ Il faut aussi ajouter des poids métiers afin de noter les aliments positivement
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Import train_test_split function</span>
-<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">train_test_split</span>
-
-<span class="c1"># Split dataset into training set and test set</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Split dataset into training set and test set</span>
 <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">Nutgrade_encoded</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span> <span class="c1"># 70% training and 30% test</span>
 </pre></div>
 </div>
@@ -353,10 +623,7 @@ Il faut aussi ajouter des poids métiers afin de noter les aliments positivement
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Import knearest neighbors Classifier model</span>
-<span class="kn">from</span> <span class="nn">sklearn.neighbors</span> <span class="kn">import</span> <span class="n">KNeighborsClassifier</span>
-
-<span class="c1">#Create KNN Classifier</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Create KNN Classifier</span>
 <span class="n">knn</span> <span class="o">=</span> <span class="n">KNeighborsClassifier</span><span class="p">(</span><span class="n">n_neighbors</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 
 <span class="c1">#Train the model using the training sets</span>
@@ -370,15 +637,13 @@ Il faut aussi ajouter des poids métiers afin de noter les aliments positivement
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#Import scikit-learn metrics module for accuracy calculation</span>
-<span class="kn">from</span> <span class="nn">sklearn</span> <span class="kn">import</span> <span class="n">metrics</span>
-<span class="c1"># Model Accuracy, how often is the classifier correct?</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Model Accuracy, how often is the classifier correct?</span>
 <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Accuracy:&quot;</span><span class="p">,</span><span class="n">metrics</span><span class="o">.</span><span class="n">accuracy_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Accuracy: 0.6461546370553156
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Accuracy: 0.6419391322229077
 </pre></div>
 </div>
 </div>
@@ -431,9 +696,7 @@ Il faut aussi ajouter des poids métiers afin de noter les aliments positivement
 <p>Construisons le modèle de classificateur KNN.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">sklearn.neighbors</span> <span class="kn">import</span> <span class="n">KNeighborsClassifier</span>
-
-<span class="n">model</span> <span class="o">=</span> <span class="n">KNeighborsClassifier</span><span class="p">(</span><span class="n">n_neighbors</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">KNeighborsClassifier</span><span class="p">(</span><span class="n">n_neighbors</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -469,12 +732,220 @@ Il faut aussi ajouter des poids métiers afin de noter les aliments positivement
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pk</span><span class="o">.</span><span class="n">graph_barplot</span><span class="p">(</span><span class="n">data_knn_test</span><span class="p">[</span><span class="s1">&#39;nutrition_grade_fr&#39;</span><span class="p">],</span> <span class="s2">&quot;Répartition des aliments selon le nutrition grade prédit avec Knn classifier&quot;</span><span class="p">,</span> 
               <span class="p">(</span><span class="mf">0.82</span><span class="p">,</span> <span class="mf">0.28</span><span class="p">,</span> <span class="mf">0.09</span><span class="p">),</span>
-              <span class="mi">0</span><span class="p">,</span> <span class="mi">45</span><span class="p">,</span> <span class="s2">&quot;nutrition_grade_fr&quot;</span><span class="p">,</span> <span class="s2">&quot;Fréquence en %&quot;</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">11</span><span class="p">,</span><span class="mi">7</span><span class="p">))</span>
+              <span class="mi">0</span><span class="p">,</span> <span class="mi">65</span><span class="p">,</span> <span class="s2">&quot;nutrition_grade_fr&quot;</span><span class="p">,</span> <span class="s2">&quot;Fréquence en %&quot;</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span> <span class="p">(</span><span class="mi">11</span><span class="p">,</span><span class="mi">7</span><span class="p">))</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<img alt="_images/ScriptFood_Analyse_p6_26_0.png" src="_images/ScriptFood_Analyse_p6_26_0.png" />
+<img alt="_images/ScriptFood_Analyse_p6_345_0.png" src="_images/ScriptFood_Analyse_p6_345_0.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_knn_test</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>reg_salt</th>
+      <th>nutrition_grade_fr</th>
+      <th>reg_additives</th>
+      <th>reg_fat</th>
+      <th>reg_carbohydrates</th>
+      <th>reg_fiber</th>
+      <th>reg_protein</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>75829</th>
+      <td>2</td>
+      <td>1</td>
+      <td>1</td>
+      <td>4</td>
+      <td>1</td>
+      <td>1</td>
+      <td>5</td>
+    </tr>
+    <tr>
+      <th>75830</th>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>1</td>
+      <td>2</td>
+      <td>1</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>75832</th>
+      <td>1</td>
+      <td>0</td>
+      <td>1</td>
+      <td>1</td>
+      <td>2</td>
+      <td>2</td>
+      <td>1</td>
+    </tr>
+    <tr>
+      <th>75833</th>
+      <td>2</td>
+      <td>2</td>
+      <td>1</td>
+      <td>4</td>
+      <td>2</td>
+      <td>1</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>75834</th>
+      <td>3</td>
+      <td>3</td>
+      <td>1</td>
+      <td>5</td>
+      <td>3</td>
+      <td>2</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>76480</th>
+      <td>4</td>
+      <td>3</td>
+      <td>1</td>
+      <td>4</td>
+      <td>3</td>
+      <td>1</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <th>76481</th>
+      <td>3</td>
+      <td>2</td>
+      <td>1</td>
+      <td>3</td>
+      <td>3</td>
+      <td>2</td>
+      <td>4</td>
+    </tr>
+    <tr>
+      <th>76482</th>
+      <td>3</td>
+      <td>2</td>
+      <td>1</td>
+      <td>1</td>
+      <td>4</td>
+      <td>2</td>
+      <td>2</td>
+    </tr>
+    <tr>
+      <th>76483</th>
+      <td>2</td>
+      <td>0</td>
+      <td>3</td>
+      <td>2</td>
+      <td>4</td>
+      <td>4</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <th>76484</th>
+      <td>1</td>
+      <td>2</td>
+      <td>2</td>
+      <td>4</td>
+      <td>5</td>
+      <td>2</td>
+      <td>2</td>
+    </tr>
+  </tbody>
+</table>
+<p>578 rows × 7 columns</p>
+</div></div></div>
+</div>
+<p>Créons une fonction pour les prochaines utilisations.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#features : list quanti</span>
+<span class="c1">#var_to_pred : Nutgrade_encoded</span>
+<span class="c1">#nb_neighbors:5</span>
+<span class="k">def</span> <span class="nf">knn_classifier_result_accuracy</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">var_to_pred</span><span class="p">,</span> <span class="n">nb_neighbors</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    calculer les résultats knn classifier sur des data</span>
+<span class="sd">    Args:</span>
+<span class="sd">        features([type]): listes variables</span>
+<span class="sd">        var_to_pred([type]): variable à prédire</span>
+<span class="sd">        nb_neighbors([type]): nombre de k</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>   
+    <span class="c1"># Split dataset into training set and test set</span>
+    <span class="n">X_train</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">train_test_split</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">var_to_pred</span><span class="p">,</span> <span class="n">test_size</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span> <span class="c1"># 70% training and 30% test</span>
+
+    <span class="c1">#Create KNN Classifier</span>
+    <span class="n">knn</span> <span class="o">=</span> <span class="n">KNeighborsClassifier</span><span class="p">(</span><span class="n">n_neighbors</span><span class="o">=</span><span class="n">nb_neighbors</span><span class="p">)</span>
+
+    <span class="c1">#Train the model using the training sets</span>
+    <span class="n">knn</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">)</span>
+
+    <span class="c1">#Predict the response for test dataset</span>
+    <span class="n">y_pred</span> <span class="o">=</span> <span class="n">knn</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X_test</span><span class="p">)</span>
+    <span class="c1"># Model Accuracy, how often is the classifier correct?</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Accuracy:&quot;</span><span class="p">,</span><span class="n">metrics</span><span class="o">.</span><span class="n">accuracy_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1">#features_test = data quanti in predict</span>
+<span class="c1">#pred=knn_classifier_predict_data(data_knn_test,features,features_test, Nutgrade_encoded,&quot;nutrition_grade_fr&quot;, 5)</span>
+<span class="k">def</span> <span class="nf">knn_classifier_predict_data</span><span class="p">(</span><span class="n">data_knn_test</span><span class="p">,</span><span class="n">features</span><span class="p">,</span><span class="n">features_test</span><span class="p">,</span> <span class="n">var_to_pred</span><span class="p">,</span><span class="n">var_to_pred_name</span><span class="p">,</span> <span class="n">nb_neighbors</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    calculer une prediction avec knn classifier</span>
+<span class="sd">    Args:</span>
+<span class="sd">        data_knn_test([type]): données à prédire</span>
+<span class="sd">        features([type]): listes variables</span>
+<span class="sd">        features_test([type]): listes variables contenues dans les data à prédire</span>
+<span class="sd">        var_to_pred([type]): données de la variable à prédire</span>
+<span class="sd">        var_to_pred_name([type]): nom de la variable à prédire</span>
+<span class="sd">        nb_neighbors([type]): nombre de k</span>
+<span class="sd">    </span>
+<span class="sd">    &quot;&quot;&quot;</span>   
+    <span class="n">model</span> <span class="o">=</span> <span class="n">KNeighborsClassifier</span><span class="p">(</span><span class="n">n_neighbors</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+    <span class="c1"># Train the model using the training sets</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">features</span><span class="p">,</span><span class="n">var_to_pred</span><span class="p">)</span>
+    <span class="n">predicted</span><span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">features_test</span><span class="p">)</span> <span class="c1"># 0:Overcast, 2:Mild</span>
+    <span class="n">data_knn_test</span><span class="o">=</span><span class="n">data_knn_test</span><span class="o">.</span><span class="n">assign</span><span class="p">(</span><span class="n">var_to_pred_name</span><span class="o">=</span><span class="n">predicted</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">data_knn_test</span>
+</pre></div>
+</div>
 </div>
 </div>
 </div>
@@ -505,11 +976,11 @@ Il faut aussi ajouter des poids métiers afin de noter les aliments positivement
         
             <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="ScriptFood_Analyse_p5.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="ScriptFood_Analyse_p4.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">V - Combinaison des aliments</p>
+            <p class="prev-next-title">IV - Objectif une meilleure santé pour tous : Application Smart Food</p>
         </div>
     </a>
 </div>
